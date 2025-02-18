@@ -1,0 +1,8 @@
+services:
+  SackerlContainer:
+    image: webdevops/php-nginx:8.3
+    volumes:
+      - .:/app
+    working_dir: /app
+    ports:
+      - "9010:80"
