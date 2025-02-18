@@ -13,10 +13,10 @@ Austrian Umgangssprache to be specific vienna Umgangssprache :D : Your code will
 
 Fun Syntax: Why settle for standard? Why not sprinkle a bit of fun and culture into your coding experience? 🎉
 
-
 Sackerlscript is a community-driven project and everyone is welcome to participate! Whether you're a beginner or a seasoned developer, you’re encouraged to contribute, share your ideas, and help make the language even more fun and unique.
 
-If you feel like adding your own touches to the language, or if you have ideas to make the code even more entertaining, feel free to fork the repo, create a branch, and submit a pull request. 
+I am still at the beginnning of my coding carrer therefore my abilitys and knowlegde about programming are limited :) , so 
+if you feel like adding your own touches to the language, or if you have ideas to make the code even more entertaining, feel free to fork the repo, create a branch, and submit a pull request. 
 The more humor, the better! There’s always room for new slang, new features, and new ways to make coding even more enjoyable.
 
 My dream is that this language grows and eventually gets used by someone – of course, just for fun! 🤙
