@@ -20,7 +20,7 @@ class Evaluator
         switch ($this->node['type']) {
 
             case 'literal':
-                return $this->node['value'];
+                return $this->checkIfBoolean($this->node['value']);
 
             case 'identifier' :
                 if (isset($this->env[$this->node['name']])) {
@@ -92,6 +92,14 @@ class Evaluator
                 echo $evaluatedValue . " ";
             }
             echo "\n";
+        }
+    }
+
+    private function checkIfBoolean($value) {
+        if(is_bool($value)) {
+            return $value ? 'true' : 'false';
+        } else {
+            return $value;
         }
     }
 
