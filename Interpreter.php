@@ -6,18 +6,19 @@ require 'Evaluator.php';
 class Interpreter
 {
     private array $ast;
-    private array $env = [];
+    private Environment $env;
     private string $fileContent;
 
 
-    public function __construct(string $fileContent)
+    public function __construct(string $fileContent, Environment $env)
     {
         $this->fileContent = $fileContent;
+        $this->env = $env;
     }
 
     public function evaluate(): void
     {
-        $this->prepareForEvaluator();
+        $this->prepareForEvaluation();
         foreach ($this->ast as $node) {
             $evaluator = new Evaluator($node, $this->env);
             try {
@@ -28,13 +29,13 @@ class Interpreter
         }
     }
 
-    private function prepareForEvaluator(): void
+    private function prepareForEvaluation(): void
     {
         $lexer = new Lexer($this->fileContent);
         $tokens = $lexer->tokenize();
 
         $parser = new Parser($tokens);
-        $this->ast = $parser->parseCodeBlock(0);
+        $this->ast = $parser->parseCodeBlock(0)[0];
     }
 
 }
