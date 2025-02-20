@@ -46,13 +46,13 @@ class Evaluator
                 $left = $this->evaluateOperand($this->node['left']);
                 $right = $this->evaluateOperand($this->node['right']);
                 switch ($this->node['operator']) {
-                    case '+' :
+                    case 'plus' :
                         return $left + $right;
-                    case '-' :
+                    case 'minus' :
                         return $left - $right;
-                    case '*' :
+                    case 'mal' :
                         return $left * $right;
-                    case '/' :
+                    case 'dividier' :
                         if ($right === 0) {
                             throw new Exception("Division by zero");
                         }
@@ -75,9 +75,9 @@ class Evaluator
             case 'functionCall':
                 $funcName = $this->node['functionName'];
                 $func = $this->env->getFunction($funcName);
-                if(!$func) throw new Exception("functionName '" . $funcName . "' undefined");
+                if (!$func) throw new Exception("functionName '" . $funcName . "' undefined");
                 $args = [];
-                if(count($this->node['arguments']) > 0) {
+                if (count($this->node['arguments']) > 0) {
                     foreach ($this->node['arguments'] as $arg) {
                         $args[] = (new Evaluator($arg[0], $this->env))->evaluate();
                     }
@@ -95,10 +95,8 @@ class Evaluator
      */
     private function evaluateOperand($operand): float|int
     {
-        // If the operand is an array, that means it's an AST node
         if (is_array($operand) && isset($operand['type'])) {
             if ($operand['type'] === 'identifier') {
-                // Look for the variable in the environment
                 $value = $this->env->getVariable($operand['name']);
                 if ($value === null) {
                     throw new Exception("Undefined variable: " . $operand['name']);
@@ -106,16 +104,13 @@ class Evaluator
                 return $value;
             }
 
-            // If it's a literal node, return its value
             if ($operand['type'] === 'literal') {
                 return $operand['value'];
             }
 
-            // For other types of operands, evaluate them recursively
             return (new Evaluator($operand, $this->env))->evaluate();
         }
 
-        // If the operand is already a raw value (not an AST node), return it directly
         return $operand;
     }
 
@@ -168,8 +163,7 @@ class Evaluator
         $funcEnv->setParent($this->env);
 
 
-
-        if(count($parameters) > 0){
+        if (count($parameters) > 0) {
             foreach ($parameters as $index => $param) {
                 if (!isset($param['name'])) {
                     throw new Exception("Malformed parameter definition: " . json_encode($param));
