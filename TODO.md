@@ -13,5 +13,3 @@
 **# Implement try- catch Block**
 
 **# Implement line end ?**
-
-**# Implement data structure like arrays, objects etc**
