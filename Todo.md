@@ -2,7 +2,7 @@
 
 **# Implement importance order For arithmetic Operations**
 
-**# Implement return statements in functions**
+**# Implement return values in functions**
 
 **# Implement If**
 
