@@ -16,6 +16,9 @@ class Parser
 
     private function parseStatement(int $tokenIndex): ?array
     {
+        $function = $this->parsFunction($tokenIndex);
+        if ($function)  return $function;
+
         $variable = $this->parseVariable($tokenIndex);
         if ($variable) return $variable;
 
@@ -33,6 +36,9 @@ class Parser
 
     private function parseExpression(int $tokenIndex): ?array
     {
+        $functionCall = $this->parseFunctionCall($tokenIndex);
+        if ($functionCall) return $functionCall;
+
         $arithmeticOperation = $this->parseArithmeticOperation($tokenIndex);
         if ($arithmeticOperation) return $arithmeticOperation;
 
@@ -54,7 +60,7 @@ class Parser
             $statements[] = $statement[0];
             $tokenIndex = $statement[1];
         }
-        return $statements;
+        return [$statements, $tokenIndex];
     }
 
     private function parseLiteralValue(int $tokenIndex): ?array
@@ -95,6 +101,17 @@ class Parser
         return null;
     }
 
+    private function parseOperand(int $tokenIndex): ?array
+    {
+        $number = $this->parseNumber($tokenIndex);
+        if ($number) return $number;
+
+        $identifier = $this->parseIdentifier($tokenIndex);
+        if ($identifier) return $identifier;
+
+        return null;
+    }
+
     private function parseBoolean(int $tokenIndex): ?array
     {
         $token = $this->currentToken($tokenIndex);
@@ -109,7 +126,7 @@ class Parser
 
     public function parseArithmeticOperation(int $tokenIndex): ?array
     {
-        $left = $this->parseNumber($tokenIndex);
+        $left = $this->parseOperand($tokenIndex);
         if (!$left) return null;
         $tokenIndex = $left[1];
 
@@ -250,26 +267,11 @@ class Parser
             $parenthesisToken = $this->currentToken($tokenIndex);
 
             if ($parenthesisToken && $parenthesisToken[0] == 'T_OPENING_PARENTHESIS') {
-                $tokenIndex++;
-                $values = [];
 
-                while (true) {
-                    $expressionResult = $this->parseExpression($tokenIndex);
-
-                    if (!$expressionResult) break;
-
-                    [$valueNode, $tokenIndex] = $expressionResult;
-                    $values[] = $valueNode;
-
-                    $peek = $this->currentToken($tokenIndex);
-                    if ($peek && $peek[0] == 'T_SEPARATOR') {
-                        $tokenIndex++;
-                        continue;
-                    }
-                    break;
-                }
+                [$values, $tokenIndex] = $this->checkForMultipleExpressionsInParenthesis($tokenIndex);
 
                 $closingToken = $this->currentToken($tokenIndex);
+
                 if ($closingToken && $closingToken[0] == 'T_CLOSING_PARENTHESIS') {
                     return [['type' => 'print', 'value' => $values], $tokenIndex + 1];
                 }
@@ -278,10 +280,115 @@ class Parser
         return null;
     }
 
+    private function parsFunction(int $tokenIndex): ?array
+    {
+        $token = $this->currentToken($tokenIndex);
+        if ($token && $token[0] == 'T_FUNCTION') {
+            $tokenIndex++;
+            $peek = $this->currentToken($tokenIndex);
 
-    public function parseIfStatement()
+            if ($peek && $peek[0] == 'T_IDENTIFIER') {
+                $functionName = $peek[1];
+                $tokenIndex++;
+                $openParentheses = $this->currentToken($tokenIndex);
+
+                if ($openParentheses && $openParentheses[0] == 'T_OPENING_PARENTHESIS') {
+                    [$parameters, $tokenIndex] = $this->checkForMultipleExpressionsInParenthesis($tokenIndex);
+                    $closingParenthesis = $this->currentToken($tokenIndex);
+
+                    if ($closingParenthesis && $closingParenthesis[0] == 'T_CLOSING_PARENTHESIS') {
+                        $tokenIndex++;
+                        $openBrace = $this->currentToken($tokenIndex);
+
+                        if ($openBrace && $openBrace[0] == 'T_OPENING_BRACE') {
+                            $tokenIndex++;
+                            [$body, $tokenIndex] = $this->parseCodeBlock($tokenIndex);
+                            $closingBrace = $this->currentToken($tokenIndex);
+
+                            if ($closingBrace && $closingBrace[0] == 'T_CLOSING_BRACE') {
+                                return [['type' => 'function', 'functionName' => $functionName, 'parameters' => $parameters, 'body' => $body], $tokenIndex + 1];
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        return null;
+    }
+
+    private function parseFunctionCall(int $tokenIndex): ?array
+    {
+        $token = $this->currentToken($tokenIndex);
+        if($token && $token[0] == 'T_IDENTIFIER') {
+            $functionName = $token[1];
+            $tokenIndex++;
+            $openingParenthesis = $this->currentToken($tokenIndex);
+
+            if($openingParenthesis && $openingParenthesis[0] == 'T_OPENING_PARENTHESIS') {
+                $tokenIndex++;
+                [$args, $tokenIndex] = $this->handlesParametersInFunction($tokenIndex);
+                $closingParenthesis = $this->currentToken($tokenIndex);
+
+                if($closingParenthesis && $closingParenthesis[0] == 'T_CLOSING_PARENTHESIS' ) {
+                    return[['type' => 'functionCall', 'functionName' => $functionName ,'arguments' => $args], $tokenIndex + 1];
+
+                }
+            }
+        }
+        return null;
+    }
+
+
+    private function parseIfStatement()
     {
         // Noch nicht implementiert
+    }
+
+
+    private function checkForMultipleExpressionsInParenthesis(int $tokenIndex): array
+    {
+        $values = [];
+        $tokenIndex++;
+
+        while (true) {
+            $expressionResult = $this->parseExpression($tokenIndex);
+            if (!$expressionResult) break;
+
+            [$valueNode, $tokenIndex] = $expressionResult;
+            $values[] = $valueNode;
+            $nextToken = $this->currentToken($tokenIndex);
+
+            if ($nextToken && $nextToken[0] == 'T_SEPARATOR') {
+                $tokenIndex++;
+                continue;
+            }
+            break;
+        }
+
+        return [$values, $tokenIndex];
+    }
+
+    private function handlesParametersInFunction(int $tokenIndex): array
+    {
+        $args = [];
+
+        $arg = $this->parseExpression($tokenIndex);
+        if ($arg) {
+            $args[] = $arg;
+            $tokenIndex++;
+        }
+
+        while ($this->currentToken($tokenIndex) && $this->currentToken($tokenIndex)[0] == 'T_SEPARATOR') {
+            $tokenIndex++;
+
+            $arg = $this->parseExpression($tokenIndex);
+            if ($arg) {
+                $args[] = $arg;
+                $tokenIndex++;
+            }
+        }
+
+        return [$args, $tokenIndex];
     }
 
 }
