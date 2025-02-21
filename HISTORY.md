@@ -4,7 +4,7 @@ Hello fellow code enthusiasts!
 You’ve just stumbled upon Sackerlscript, a quirky and fun project where we combine the power of programming with the rich, expressive, and (some would say) uniquely charming Austrian Umgangssprache.
 If you've ever wondered what it would be like to code in a language that speaks the heart and soul of Austrian dialect, then look no further! 
 
-Sackerlscript is an interpreted language written in Php (yes, I know php is already an interpreted language, but I am not insane enough to try it in c++ nor assembly (yet)) designed to make programming fun while adding a touch of local flavor. 
+Sackerlscript is an interpreted language written in Php (yes, I know php is already an interpreted language, but I am not insane enough to try it in c nor assembly (yet)) designed to make programming fun while adding a touch of local flavor. 
 Forget the boring syntax of conventional languages—Sackerlscript brings humor, personality, and that unmistakable Austrian vibe to your code.
 It's not about efficiency; it's about having a good time while coding in a style that feels like you’re chatting with a local.
 
