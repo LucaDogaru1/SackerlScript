@@ -8,8 +8,6 @@
 
 **# Implement Loops**
 
-**# Implement return statements in functions**
-
 **# Implement try- catch Block**
 
 **# Implement line end ?**
