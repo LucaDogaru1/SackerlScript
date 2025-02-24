@@ -1,26 +1,8 @@
+heast dasdas = 4
+heast ander = 7
 
 hawara add(x, y) {
-oida.sag(x plus y)
+oida.sag("addition: ", x plus y)
 }
 
-add(4, 7)
-
-hawara multiplizier(x, y) {
-oida.sag(x mal y)
-}
-
-multiplizier(4, 7)
-
-
-hawara subtrahiere(x, y) {
-oida.sag(x minus y)
-}
-
-subtrahiere(7, 4)
-
-hawara division(x, y) {
-oida.sag(x dividier y)
-}
-
-division(8, 2)
-
+add(dasdas, ander)
