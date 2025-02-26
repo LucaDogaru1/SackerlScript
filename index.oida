@@ -1,8 +1,0 @@
-heast dasdas = 4
-heast ander = 7
-
-hawara add(x, y) {
-oida.sag("addition: ", x plus y)
-}
-
-add(dasdas, ander)
