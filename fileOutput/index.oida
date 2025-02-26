@@ -1,0 +1,8 @@
+heast x = 5
+heast y = 4
+
+wenn(x klana 2 und y klana 10 oda x klana 20) {
+y = 20
+}
+
+oida.sag(y)
