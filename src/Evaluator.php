@@ -84,6 +84,11 @@ class Evaluator
                 }
                 return $this->executeFunction($func, $args);
 
+            case 'if':
+                $body = $this->node['body'];
+                $shouldExecute = $this->evaluateConditionOperator($this->node);
+                return $this->executeIfBody($shouldExecute, $body);
+
             default:
                 throw new Exception("Unknown node type: " . $this->node['type'] . "\n");
         }
@@ -179,6 +184,110 @@ class Evaluator
         }
 
         return $result;
+    }
+
+    /**
+     * @throws Exception
+     */
+    private function executeIfBody(bool $shouldExecute, $body)
+    {
+        if (!$shouldExecute) {
+            return null;
+        }
+
+        $result = null;
+        foreach ($body as $statement) {
+            $result = (new Evaluator($statement, $this->env))->evaluate();
+        }
+        return $result;
+    }
+
+    /**
+     * @throws Exception
+     */
+    private function evaluateConditionOperator(array $node): bool
+    {
+        if (empty($node['condition'])) {
+            return $this->handleSingleCondition($node);
+        }
+
+        $conditions = $node['condition'];
+
+        $result = $this->evaluateComparison(
+            $conditions[0],
+            $conditions[1][0],
+            $conditions[2]
+        );
+
+
+        for ($i = 3; $i < count($conditions); $i += 2) {
+            if (!isset($conditions[$i + 1])) {
+                throw new Exception("Invalid condition structure");
+            }
+
+
+            $logicalOperator = $conditions[$i][0];
+
+
+            $nextResult = $this->evaluateComparison(
+                $conditions[$i + 1],
+                $conditions[$i + 2][0],
+                $conditions[$i + 3]
+            );
+
+
+            $result = match ($logicalOperator) {
+                'und' => $result && $nextResult,
+                'oda' => $result || $nextResult,
+                default => throw new Exception("Unknown logical operator: " . $logicalOperator),
+            };
+
+            $i += 2;
+        }
+
+        return $result;
+    }
+
+    private function handleSingleCondition(array $condition): bool
+    {
+        if (isset($condition['left'], $condition['operator'], $condition['right'])) {
+
+            $left = (new Evaluator($condition['left'], $this->env))->evaluate();
+            $operator = $condition['operator'];
+            $right = (new Evaluator($condition['right'], $this->env))->evaluate();
+
+           return  match ($operator) {
+                'glei' => $left == $right,
+                'nedglei' => $left != $right,
+                'größer' => $left > $right,
+                'klana' => $left < $right,
+                'größerglei' => $left >= $right,
+                'klanaglei' => $left <= $right,
+                default => throw new Exception("Unknown comparison operator: " . $operator),
+            };
+        }
+
+        return (new Evaluator($condition['left'], $this->env))->evaluate();
+    }
+
+    /**
+     * @throws Exception
+     */
+    private function evaluateComparison(array $left, string $operator, array $right): bool
+    {
+        $leftValue = (new Evaluator($left, $this->env))->evaluate();
+
+        $rightValue = (new Evaluator($right, $this->env))->evaluate();
+
+        return match ($operator) {
+            'klana' => $leftValue < $rightValue,
+            'größer' => $leftValue > $rightValue,
+            'glei' => $leftValue == $rightValue,
+            'nedglei' => $leftValue != $rightValue,
+            'größerglei' => $leftValue >= $rightValue,
+            'klanaglei' => $leftValue <= $rightValue,
+            default => throw new Exception("Unknown comparison operator: " . $operator),
+        };
     }
 
 }
