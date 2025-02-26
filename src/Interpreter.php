@@ -16,6 +16,9 @@ class Interpreter
         $this->env = $env;
     }
 
+    /**
+     * @throws Exception
+     */
     public function evaluate(): void
     {
         $this->prepareForEvaluation();
@@ -29,6 +32,9 @@ class Interpreter
         }
     }
 
+    /**
+     * @throws Exception
+     */
     private function prepareForEvaluation(): void
     {
         $lexer = new Lexer($this->fileContent);
