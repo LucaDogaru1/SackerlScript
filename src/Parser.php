@@ -14,10 +14,16 @@ class Parser
         return $this->tokens[$currentTokenIndex] ?? null;
     }
 
+    /**
+     * @throws Exception
+     */
     private function parseStatement(int $tokenIndex): ?array
     {
+        $if = $this->parseIfStatement($tokenIndex);
+        if ($if) return $if;
+
         $function = $this->parsFunction($tokenIndex);
-        if ($function)  return $function;
+        if ($function) return $function;
 
         $variable = $this->parseVariable($tokenIndex);
         if ($variable) return $variable;
@@ -48,9 +54,18 @@ class Parser
         $identifier = $this->parseIdentifier($tokenIndex);
         if ($identifier) return $identifier;
 
+        $logical = $this->parseLogicOperation($tokenIndex);
+        if ($logical) return $logical;
+
+        $comparison = $this->parseComparisonOperator($tokenIndex);
+        if ($comparison) return $comparison;
+
         return null;
     }
 
+    /**
+     * @throws Exception
+     */
     public function parseCodeBlock(int $tokenIndex): ?array
     {
         $statements = [];
@@ -319,18 +334,18 @@ class Parser
     private function parseFunctionCall(int $tokenIndex): ?array
     {
         $token = $this->currentToken($tokenIndex);
-        if($token && $token[0] == 'T_IDENTIFIER') {
+        if ($token && $token[0] == 'T_IDENTIFIER') {
             $functionName = $token[1];
             $tokenIndex++;
             $openingParenthesis = $this->currentToken($tokenIndex);
 
-            if($openingParenthesis && $openingParenthesis[0] == 'T_OPENING_PARENTHESIS') {
+            if ($openingParenthesis && $openingParenthesis[0] == 'T_OPENING_PARENTHESIS') {
                 $tokenIndex++;
                 [$args, $tokenIndex] = $this->handlesParametersInFunction($tokenIndex);
                 $closingParenthesis = $this->currentToken($tokenIndex);
 
-                if($closingParenthesis && $closingParenthesis[0] == 'T_CLOSING_PARENTHESIS' ) {
-                    return[['type' => 'functionCall', 'functionName' => $functionName ,'arguments' => $args], $tokenIndex + 1];
+                if ($closingParenthesis && $closingParenthesis[0] == 'T_CLOSING_PARENTHESIS') {
+                    return [['type' => 'functionCall', 'functionName' => $functionName, 'arguments' => $args], $tokenIndex + 1];
 
                 }
             }
@@ -339,9 +354,48 @@ class Parser
     }
 
 
-    private function parseIfStatement()
+    /**
+     * @throws Exception
+     */
+    private function parseIfStatement(int $tokenIndex): ?array
     {
-        // Noch nicht implementiert
+
+        $token = $this->currentToken($tokenIndex);
+        if ($token && $token[0] == 'T_IF') {
+            $tokenIndex++;
+            $openingParenthesis = $this->currentToken($tokenIndex);
+
+            if ($openingParenthesis && $openingParenthesis[0] == 'T_OPENING_PARENTHESIS') {
+                [$condition, $tokenIndex] = $this->checkForCondition($tokenIndex);
+                $closingParenthesis = $this->currentToken($tokenIndex);
+
+                if ($closingParenthesis && $closingParenthesis[0] == 'T_CLOSING_PARENTHESIS') {
+                    $tokenIndex++;
+                    $openingBrace = $this->currentToken($tokenIndex);
+
+
+                    if ($openingBrace && $openingBrace[0] == 'T_OPENING_BRACE') {
+                        $tokenIndex++;
+                        [$body, $tokenIndex] = $this->parseCodeBlock($tokenIndex);
+                        $closingBrace = $this->currentToken($tokenIndex);
+
+                        if ($closingBrace && $closingBrace[0] == 'T_CLOSING_BRACE') {
+                            if (!$body) {
+                                throw new Exception("Body of If_statement is empty");
+                            }
+                            if (count($condition) === 1) {
+                                return [['type' => 'if', 'left' => $condition[0], 'body' => $body], $tokenIndex + 1];
+                            }
+                            if (count($condition) > 3) {
+                                return [['type' => 'if', 'condition' => $condition, 'body' => $body], $tokenIndex + 1];
+                            }
+                            return [['type' => 'if', 'left' => $condition[0], 'operator' => $condition[1][0], 'right' => $condition[2], 'body' => $body], $tokenIndex + 1];
+                        }
+                    }
+                }
+            }
+        }
+        return null;
     }
 
 
@@ -389,6 +443,59 @@ class Parser
         }
 
         return [$args, $tokenIndex];
+    }
+
+    private function checkForCondition(int $tokenIndex): array
+    {
+        $condition = [];
+        $tokenIndex++;
+
+        while (true) {
+            $conditionResult = $this->parseExpression($tokenIndex);
+            if (!$conditionResult) break;
+
+            [$conditionNode, $tokenIndex] = $conditionResult;
+            $condition[] = $conditionNode;
+
+
+            $logicalOperator = $this->parseLogicOperation($tokenIndex);
+            if ($logicalOperator) {
+                [$operator, $tokenIndex] = $logicalOperator;
+
+                $condition[] = [$operator, $tokenIndex];
+                continue;
+            }
+
+            $comparisonOperator = $this->parseComparisonOperator($tokenIndex);
+            if ($comparisonOperator) {
+                [$operator, $tokenIndex] = $comparisonOperator;
+                $condition[] = [$operator, $tokenIndex];
+                continue;
+            }
+
+            break;
+        }
+
+
+        return [$condition, $tokenIndex];
+    }
+
+    private function parseLogicOperation(int $tokenIndex): ?array
+    {
+        $token = $this->currentToken($tokenIndex);
+        if ($token && $token[0] == 'T_LOGICAL_AND' || $token && $token[0] == 'T_LOGICAL_OR') {
+            return [$token[1], $tokenIndex + 1];
+        }
+        return null;
+    }
+
+    private function parseComparisonOperator(int $tokenIndex): ?array
+    {
+        $token = $this->currentToken($tokenIndex);
+        if ($token && $token[0] == 'T_COMPARISON_OPERATOR') {
+            return [$token[1], $tokenIndex + 1];
+        }
+        return null;
     }
 
 }
