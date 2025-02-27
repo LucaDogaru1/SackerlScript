@@ -21,8 +21,8 @@ class Lexer
             'T_FUNCTION' => '/\bhawara\b/',
             'T_LOGICAL_AND' => '/\bund\b/',
             'T_LOGICAL_OR' => '/\boda\b/',
-            'T_COMPARISON_OPERATOR' => '/\bglei\b|\bnedglei\b|\bklanaglei\b|\b(gößerglei|größerglei)\b|\bklana\b|\bgrößer\b/',
-            'T_ARITHMETIC_OPERATOR' => '/(plus|minus|mal|dividier)/',
+            'T_COMPARISON_OPERATOR' => '/\bgleich\b|\bisned\b|\bklanaglei\b|\b(gößerglei|größerglei)\b|\bklana\b|\bgrößer\b/',
+            'T_ARITHMETIC_OPERATOR' => '/(plusplus|minusminus|mal|dividier|plus|minus)/',
             'T_ASSIGN' => '/\+=|-=|\*=|\/=|=/',
             'T_NUMBER' => '/\d+/',
             'T_STRING' => '/"(?:.*?)"/',
@@ -33,7 +33,8 @@ class Lexer
             'T_OPENING_PARENTHESIS' => '/\(/',
             'T_CLOSING_PARENTHESIS' => '/\)/',
             'T_SEPARATOR' => '/\,/',
-            'T_SEMICOLON' => '/\b;\b/',
+            'T_SEMICOLON' => '/;/',
+            'T_FOR' => '\baufi\b',
             'T_IDENTIFIER' => '/[a-zA-Z_]\w*/',
         ];
 
