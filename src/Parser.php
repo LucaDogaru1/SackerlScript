@@ -25,6 +25,9 @@ class Parser
         $forLoop = $this->parseForLoop($tokenIndex);
         if($forLoop) return $forLoop;
 
+        $whileLoop = $this->parseWhileLoop($tokenIndex);
+        if($whileLoop) return $whileLoop;
+
         $function = $this->parsFunction($tokenIndex);
         if ($function) return $function;
 
@@ -458,6 +461,7 @@ class Parser
         $tokenIndex++;
 
         while (true) {
+
             $conditionResult = $this->parseExpression($tokenIndex);
             if (!$conditionResult) break;
 
@@ -549,6 +553,49 @@ class Parser
                                     return [['type' => 'forLoop', 'initialization' => $initialization, 'condition' => $conditionNode, 'iteration' => $iteration, 'body' => $body], $tokenIndex + 1];
                                 }
                             }
+                        }
+                    }
+                }
+            }
+        }
+        return null;
+    }
+
+    /**
+     * @throws Exception
+     */
+    private function parseWhileLoop($tokenIndex) :?array
+    {
+        $token = $this->currentToken($tokenIndex);
+        if($token && $token[0] == 'T_WHILE') {
+            $tokenIndex++;
+            $openParenthesis = $this->currentToken($tokenIndex);
+
+            if ($openParenthesis && $openParenthesis[0] == 'T_OPENING_PARENTHESIS') {
+                [$condition, $tokenIndex] = $this->checkForCondition($tokenIndex);
+                $closingParenthesis = $this->currentToken($tokenIndex);
+
+                if ($closingParenthesis && $closingParenthesis[0] == 'T_CLOSING_PARENTHESIS') {
+                    $tokenIndex++;
+                    $openingBrace = $this->currentToken($tokenIndex);
+
+                    if ($openingBrace && $openingBrace[0] == 'T_OPENING_BRACE') {
+                        $tokenIndex++;
+                        [$body, $tokenIndex] = $this->parseCodeBlock($tokenIndex);
+                        $closingBrace = $this->currentToken($tokenIndex);
+
+
+                        if ($closingBrace && $closingBrace[0] == 'T_CLOSING_BRACE') {
+                            if (!$body) {
+                                throw new Exception("Body of If_statement is empty");
+                            }
+                            if (count($condition) === 1) {
+                                return [['type' => 'whileLoop', 'left' => $condition[0], 'body' => $body], $tokenIndex + 1];
+                            }
+                            if (count($condition) > 3) {
+                                return [['type' => 'whileLoop', 'condition' => $condition, 'body' => $body], $tokenIndex + 1];
+                            }
+                            return [['type' => 'whileLoop', 'left' => $condition[0], 'operator' => $condition[1][0], 'right' => $condition[2], 'body' => $body], $tokenIndex + 1];
                         }
                     }
                 }
