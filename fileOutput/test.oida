@@ -1,6 +1,7 @@
 
-aufi(x = 0; x klana 10; x plusplus) {
-wenn(x gleich 5) {
-oida.sag(x, "hallo welt")
-}
+heast x = 0
+
+geh weida(x klana 5) {
+oida.sag(x)
+x plusplus
 }
