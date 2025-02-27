@@ -22,6 +22,9 @@ class Parser
         $if = $this->parseIfStatement($tokenIndex);
         if ($if) return $if;
 
+        $forLoop = $this->parseForLoop($tokenIndex);
+        if($forLoop) return $forLoop;
+
         $function = $this->parsFunction($tokenIndex);
         if ($function) return $function;
 
@@ -148,6 +151,10 @@ class Parser
         $operator = $this->parseArithmeticOperator($tokenIndex);
         if (!$operator) return null;
         $tokenIndex = $operator[1];
+
+        if($operator[0] == 'plusplus' || $operator[0] == 'minusminus') {
+            return [['type' => 'arithmeticOperation', 'operator' => $operator[0], 'operand' => $left[0]], $tokenIndex];
+        }
 
         $right = $this->parseExpression($tokenIndex);
         if (!$right) return null;
@@ -498,4 +505,88 @@ class Parser
         return null;
     }
 
-}
+    /**
+     * @throws Exception
+     */
+    private function parseForLoop(int $tokenIndex):?array
+    {
+        $token = $this->currentToken($tokenIndex);
+
+        if ($token && $token[0] == 'T_FOR') {
+            $tokenIndex++;
+            $openParenthesis = $this->currentToken($tokenIndex);
+
+            if ($openParenthesis && $openParenthesis[0] == 'T_OPENING_PARENTHESIS') {
+                $tokenIndex++;
+                [$initialization, $tokenIndex] = $this->parseAssignment($tokenIndex);
+                $semicolon = $this->currentToken($tokenIndex);
+
+                if ($semicolon && $semicolon[0] == 'T_SEMICOLON') {
+                    $tokenIndex++;
+                    $conditionResult = $this->parseConditionInLoop($tokenIndex);
+                    [$conditionNode, $tokenIndex] = $conditionResult;
+                    $semicolon = $this->currentToken($tokenIndex);
+
+                    if ($semicolon && $semicolon[0] == 'T_SEMICOLON') {
+                        $tokenIndex++;
+                        [$iteration, $tokenIndex] = $this->parseExpression($tokenIndex);
+                        $closingParenthesis = $this->currentToken($tokenIndex);
+
+                        if ($closingParenthesis && $closingParenthesis[0] == 'T_CLOSING_PARENTHESIS') {
+                            $tokenIndex++;
+                            $openingBrace = $this->currentToken($tokenIndex);
+
+                            if ($openingBrace && $openingBrace[0] == 'T_OPENING_BRACE') {
+                                $tokenIndex++;
+                                [$body, $tokenIndex] = $this->parseCodeBlock($tokenIndex);
+                                $closingBrace = $this->currentToken($tokenIndex);
+
+
+                                if ($closingBrace && $closingBrace[0] == 'T_CLOSING_BRACE') {
+                                    if (!$body) {
+                                        throw new Exception("Body of Loop  is empty");
+                                    }
+                                    return [['type' => 'forLoop', 'initialization' => $initialization, 'condition' => $conditionNode, 'iteration' => $iteration, 'body' => $body], $tokenIndex + 1];
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        return null;
+    }
+
+    /**
+     * @throws Exception
+     */
+    private function parseConditionInLoop(int $tokenIndex): ?array
+    {
+        $left = $this->parseExpression($tokenIndex);
+        if (!$left) throw new Exception('Expected expression in loop condition');
+
+        [$leftNode, $tokenIndex] = $left;
+
+        $comparisonOperator = $this->parseComparisonOperator($tokenIndex);
+        if (!$comparisonOperator) throw new Exception('Expected comparison operator in loop condition');
+
+        [$operator, $tokenIndex] = $comparisonOperator;
+
+        $right = $this->parseExpression($tokenIndex);
+        if (!$right) throw new Exception('Expected right-hand side expression in loop condition');
+
+        [$rightNode, $tokenIndex] = $right;
+
+        return [
+            [
+                'type' => 'comparison',
+                'left' => $leftNode,
+                'operator' => $operator,
+                'right' => $rightNode
+            ],
+            $tokenIndex
+        ];
+    }
+
+    }
+
