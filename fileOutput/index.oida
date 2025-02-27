@@ -1,8 +1,10 @@
-heast x = 5
-heast y = 4
+heast x = 10
+heast y = 5
 
-wenn(x klana 2 und y klana 10 oda x klana 20) {
-y = 20
+hawara addiere(a, b) {
+wenn(a plus b isned 15) {
+oida.sag("hallo welt")
+}
 }
 
-oida.sag(y)
+addiere(x, y)
