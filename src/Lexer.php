@@ -35,7 +35,9 @@ class Lexer
             'T_SEPARATOR' => '/\,/',
             'T_SEMICOLON' => '/;/',
             'T_FOR' => '\baufi\b',
+            'T_WHILE' => '/\bgeh weida\b/',
             'T_IDENTIFIER' => '/[a-zA-Z_]\w*/',
+
         ];
 
         $this->lookForTokens($patterns);
