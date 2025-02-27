@@ -43,6 +43,21 @@ class Evaluator
                 return $varValue;
 
             case 'arithmeticOperation' :
+                if (isset($this->node['operand'])) {
+                    $left = $this->evaluateOperand($this->node['operand']);
+                    switch ($this->node['operator']) {
+                        case 'plusplus':
+                            $updatedValue = $left + 1 ;
+                            $this->env->defineVariable($this->node['operand']['name'], $updatedValue);
+                            return $updatedValue;
+                        case 'minusminus':
+                            $updatedValue = $left -1;
+                            $this->env->defineVariable($this->node['operand']['name'], $updatedValue);
+                            return $updatedValue;
+                        default :
+                            throw new Exception("Unknown unary operator: " . $this->node['operator']);
+                    }
+                }
                 $left = $this->evaluateOperand($this->node['left']);
                 $right = $this->evaluateOperand($this->node['right']);
                 switch ($this->node['operator']) {
@@ -88,6 +103,11 @@ class Evaluator
                 $body = $this->node['body'];
                 $shouldExecute = $this->evaluateConditionOperator($this->node);
                 return $this->executeIfBody($shouldExecute, $body);
+
+            case 'forLoop':
+                $this->evaluateForLoop();
+                return null;
+
 
             default:
                 throw new Exception("Unknown node type: " . $this->node['type'] . "\n");
@@ -256,9 +276,9 @@ class Evaluator
             $operator = $condition['operator'];
             $right = (new Evaluator($condition['right'], $this->env))->evaluate();
 
-           return  match ($operator) {
-                'glei' => $left == $right,
-                'nedglei' => $left != $right,
+            return match ($operator) {
+                'gleich' => $left == $right,
+                'isned' => $left != $right,
                 'größer' => $left > $right,
                 'klana' => $left < $right,
                 'größerglei' => $left >= $right,
@@ -282,12 +302,26 @@ class Evaluator
         return match ($operator) {
             'klana' => $leftValue < $rightValue,
             'größer' => $leftValue > $rightValue,
-            'glei' => $leftValue == $rightValue,
-            'nedglei' => $leftValue != $rightValue,
+            'gleich' => $leftValue == $rightValue,
+            'isned' => $leftValue != $rightValue,
             'größerglei' => $leftValue >= $rightValue,
             'klanaglei' => $leftValue <= $rightValue,
             default => throw new Exception("Unknown comparison operator: " . $operator),
         };
     }
 
+    /**
+     * @throws Exception
+     */
+    private function evaluateForLoop()
+    {
+        (new Evaluator($this->node['initialization'], $this->env))->evaluate();
+
+        while ($this->evaluateComparison($this->node['condition']['left'], $this->node['condition']['operator'], $this->node['condition']['right'])) {
+            foreach ($this->node['body'] as $body) {
+                (new Evaluator($body, $this->env))->evaluate();
+            }
+            (new Evaluator($this->node['iteration'], $this->env))->evaluate();
+        }
+    }
 }
