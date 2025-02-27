@@ -16,7 +16,6 @@ class Evaluator
      */
     public function evaluate()
     {
-
         switch ($this->node['type']) {
 
             case 'literal':
@@ -108,6 +107,9 @@ class Evaluator
                 $this->evaluateForLoop();
                 return null;
 
+            case 'whileLoop':
+                $this->evaluateWhileLoop($this->node);
+                return null;
 
             default:
                 throw new Exception("Unknown node type: " . $this->node['type'] . "\n");
@@ -268,13 +270,18 @@ class Evaluator
         return $result;
     }
 
+    /**
+     * @throws Exception
+     */
     private function handleSingleCondition(array $condition): bool
     {
+
         if (isset($condition['left'], $condition['operator'], $condition['right'])) {
 
             $left = (new Evaluator($condition['left'], $this->env))->evaluate();
             $operator = $condition['operator'];
             $right = (new Evaluator($condition['right'], $this->env))->evaluate();
+
 
             return match ($operator) {
                 'gleich' => $left == $right,
@@ -322,6 +329,18 @@ class Evaluator
                 (new Evaluator($body, $this->env))->evaluate();
             }
             (new Evaluator($this->node['iteration'], $this->env))->evaluate();
+        }
+    }
+
+    /**
+     * @throws Exception
+     */
+    private function evaluateWhileLoop(array $node)
+    {
+        while($this->evaluateConditionOperator($node)) {
+            foreach($this->node['body'] as $body) {
+                (new Evaluator($body, $this->env))->evaluate();
+            }
         }
     }
 }
