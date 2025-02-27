@@ -1,0 +1,6 @@
+
+aufi(x = 0; x klana 10; x plusplus) {
+wenn(x gleich 5) {
+oida.sag(x, "hallo welt")
+}
+}
