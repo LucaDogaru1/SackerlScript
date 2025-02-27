@@ -4,11 +4,16 @@ require_once 'Interpreter.php';
 require_once 'Environment.php';
 
 
-$fileContent = file_get_contents($_SERVER['argv'][1]);
-$env = new Environment();
-$interpreter = new Interpreter($fileContent, $env);
+$fileName = $_SERVER['argv'][1];
 
-$interpreter->evaluate();
+if (str_ends_with($fileName, '.oida')) {
+    $fileContent = file_get_contents($fileName);
+    $env = new Environment();
+    $interpreter = new Interpreter($fileContent, $env);
 
+    $interpreter->evaluate();
+} else {
+    echo "Error: The file must have the '.oida' extension.\n";
+}
 
 
