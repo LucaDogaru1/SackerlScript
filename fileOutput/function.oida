@@ -1,5 +1,5 @@
 heast x = 10
-heast y = 5
+heast y = 6
 
 hawara addiere(a, b) {
 wenn(a plus b isned 15) {
@@ -8,3 +8,5 @@ oida.sag("hallo welt")
 }
 
 addiere(x, y)
+
+

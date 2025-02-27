@@ -1,0 +1,6 @@
+heast x = 2
+heast y = 3
+
+wenn(x klana y und x klana 5) {
+oida.sag("da bin ich")
+}
