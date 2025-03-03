@@ -2,8 +2,7 @@ heast x = 10
 heast y = 6
 
 hawara addiere(a, b) {
-oida.sag(a + b)
-
+oida.sag(a plus b)
 }
 
 addiere(x, y)
