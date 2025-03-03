@@ -23,10 +23,10 @@ class Parser
         if ($if) return $if;
 
         $forLoop = $this->parseForLoop($tokenIndex);
-        if($forLoop) return $forLoop;
+        if ($forLoop) return $forLoop;
 
         $whileLoop = $this->parseWhileLoop($tokenIndex);
-        if($whileLoop) return $whileLoop;
+        if ($whileLoop) return $whileLoop;
 
         $function = $this->parsFunction($tokenIndex);
         if ($function) return $function;
@@ -155,7 +155,7 @@ class Parser
         if (!$operator) return null;
         $tokenIndex = $operator[1];
 
-        if($operator[0] == 'plusplus' || $operator[0] == 'minusminus') {
+        if ($operator[0] == 'plusplus' || $operator[0] == 'minusminus') {
             return [['type' => 'arithmeticOperation', 'operator' => $operator[0], 'operand' => $left[0]], $tokenIndex];
         }
 
@@ -383,7 +383,6 @@ class Parser
                     $tokenIndex++;
                     $openingBrace = $this->currentToken($tokenIndex);
 
-
                     if ($openingBrace && $openingBrace[0] == 'T_OPENING_BRACE') {
                         $tokenIndex++;
                         [$body, $tokenIndex] = $this->parseCodeBlock($tokenIndex);
@@ -393,19 +392,50 @@ class Parser
                             if (!$body) {
                                 throw new Exception("Body of If_statement is empty");
                             }
+
                             if (count($condition) === 1) {
-                                return [['type' => 'if', 'left' => $condition[0], 'body' => $body], $tokenIndex + 1];
+                                $ifNode = ['type' => 'if', 'left' => $condition[0], 'body' => $body];
+                                $this->parseElse($ifNode, $tokenIndex);
+                                return [$ifNode, $tokenIndex + 1];
                             }
                             if (count($condition) > 3) {
-                                return [['type' => 'if', 'condition' => $condition, 'body' => $body], $tokenIndex + 1];
+                                $ifNode = ['type' => 'if', 'condition' => $condition, 'body' => $body];
+                                $this->parseElse($ifNode, $tokenIndex);
+                                return [$ifNode, $tokenIndex + 1];
                             }
-                            return [['type' => 'if', 'left' => $condition[0], 'operator' => $condition[1][0], 'right' => $condition[2], 'body' => $body], $tokenIndex + 1];
+                            $ifNode = ['type' => 'if', 'left' => $condition[0], 'operator' => $condition[1][0], 'right' => $condition[2], 'body' => $body];
+                            $this->parseElse($ifNode, $tokenIndex);
+                            return [$ifNode, $tokenIndex + 1];
                         }
                     }
                 }
             }
         }
         return null;
+    }
+
+
+    /**
+     * @throws Exception
+     */
+    private function parseElse(array &$ifNode, int $tokenIndex): void
+    {
+        $tokenIndex++;
+        $token = $this->currentToken($tokenIndex);
+        if ($token && $token[0] == 'T_ELSE') {
+            $tokenIndex++;
+            $openingBrace = $this->currentToken($tokenIndex);
+
+            if ($openingBrace && $openingBrace[0] == 'T_OPENING_BRACE') {
+                $tokenIndex++;
+                [$body, $tokenIndex] = $this->parseCodeBlock($tokenIndex);
+                $closingBrace = $this->currentToken($tokenIndex);
+
+                if ($closingBrace && $closingBrace[0] == 'T_CLOSING_BRACE') {
+                     $ifNode['else'] = $body;
+                }
+            }
+        }
     }
 
 
@@ -512,7 +542,7 @@ class Parser
     /**
      * @throws Exception
      */
-    private function parseForLoop(int $tokenIndex):?array
+    private function parseForLoop(int $tokenIndex): ?array
     {
         $token = $this->currentToken($tokenIndex);
 
@@ -564,10 +594,10 @@ class Parser
     /**
      * @throws Exception
      */
-    private function parseWhileLoop($tokenIndex) :?array
+    private function parseWhileLoop($tokenIndex): ?array
     {
         $token = $this->currentToken($tokenIndex);
-        if($token && $token[0] == 'T_WHILE') {
+        if ($token && $token[0] == 'T_WHILE') {
             $tokenIndex++;
             $openParenthesis = $this->currentToken($tokenIndex);
 
@@ -635,5 +665,5 @@ class Parser
         ];
     }
 
-    }
+}
 
