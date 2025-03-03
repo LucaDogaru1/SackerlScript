@@ -16,6 +16,7 @@ class Lexer
             'T_PRINT' => '/\boida\.sag\b/',
             'T_LET' => '/\bheast\b/',
             'T_IF'=> '/\bwenn\b/',
+            'T_ELSE' => '/\bsonst\b/',
             'T_FALSE' => '/\bsichaned\b/',
             'T_TRUE' => '/\bbasst\b/',
             'T_FUNCTION' => '/\bhawara\b/',
