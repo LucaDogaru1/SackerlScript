@@ -4,10 +4,6 @@
 
 **# Implement return values in functions**
 
-**# Implement If**
-
-**# Implement Loops**
-
 **# Implement try- catch Block**
 
 **# Implement line end ?**
