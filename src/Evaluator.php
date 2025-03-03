@@ -213,7 +213,14 @@ class Evaluator
      */
     private function executeIfBody(bool $shouldExecute, $body)
     {
-        if (!$shouldExecute) {
+        if (!$shouldExecute && isset($this->node['else'])) {
+            $body = $this->node['else'];
+            $result = null;
+            foreach ($body as $statement) {
+                $result = (new Evaluator($statement, $this->env))->evaluate();
+            }
+            return $result;
+        } else if(!$shouldExecute) {
             return null;
         }
 
