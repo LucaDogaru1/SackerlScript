@@ -1,6 +1,7 @@
 heast x = 10
 heast y = basst
 heast j = sichaned
+heast text = "Hello world"
 
 
-oida.sag(x, y, j)
+oida.sag(x, y, j, text)

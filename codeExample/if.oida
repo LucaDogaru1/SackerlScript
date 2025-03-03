@@ -1,6 +1,8 @@
 heast x = 2
 heast y = 3
 
-wenn(x klana y und x klana 5) {
+wenn(x größer y ) {
 oida.sag("da bin ich")
+} sonst{
+oida.sag("HIER")
 }
