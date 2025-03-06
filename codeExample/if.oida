@@ -1,8 +1,8 @@
-heast x = 2
-heast y = 3
+heast x = 0
+heast y = 2
 
-wenn(x größer y ) {
-oida.sag("da bin ich")
-} sonst{
-oida.sag("HIER")
+wenn(x klana y und x klana 5) {
+oida.sag("IN IF")
+} sonst {
+oida.sag("IN ELSE")
 }
