@@ -38,7 +38,7 @@ class Evaluator
             case 'assignment':
             case 'variable':
                 $varName = $this->node['name'];
-                if($this->isVariableArray($varName)) return $this->isVariableArray($varName);
+                if ($this->isVariableArray($varName)) return $this->isVariableArray($varName);
                 $varValue = (new Evaluator($this->node['value'], $this->env))->evaluate();
                 $this->env->defineVariable($varName, $varValue);
                 return $varValue;
@@ -64,8 +64,11 @@ class Evaluator
             case 'property_access':
                 $object = (new Evaluator($this->node['object'], $this->env))->evaluate();
                 $property = $this->node['property'];
-                if ($property === 'size' && is_array($object)) return count($object);
+                if ($property === 'numma' && is_array($object)) return count($object);
+                if ($property === 'ane' && is_array($object)) return $this->handlePushArray();
+                if ($property === 'ausse' && is_array($object)) return $this->handleSliceArray();
                 throw new Exception("Unknown property '$property' for object");
+
 
             case 'arithmeticOperation' :
                 if (isset($this->node['operand'])) {
@@ -135,6 +138,10 @@ class Evaluator
 
             case 'whileLoop':
                 $this->evaluateWhileLoop($this->node);
+                return null;
+
+            case 'forEach' :
+                $this->evaluateForEachLoop($this->node);
                 return null;
 
             default:
@@ -392,5 +399,50 @@ class Evaluator
             return $varValue;
         }
         return null;
+    }
+
+    /**
+     * @throws Exception
+     */
+    private function handlePushArray()
+    {
+        $arrayName = $this->node['object']['name'];
+        $array = $this->env->getVariable($arrayName);
+        $value = (new Evaluator($this->node['value'], $this->env))->evaluate();
+        $array[] = $value;
+        $this->env->defineVariable($arrayName, $array);
+        return $array;
+
+    }
+
+    /**
+     * @throws Exception
+     */
+    private function handleSliceArray(): array
+    {
+        $arrayName = $this->node['object']['name'];
+        $array = $this->env->getVariable($arrayName);
+        $value = (new Evaluator($this->node['value'], $this->env))->evaluate();
+        if(!is_numeric($value)) throw new Exception("index needs to be a number .weg()");
+        $index = (int) $value;
+        return array_slice($array, $index);
+    }
+
+    /**
+     * @throws Exception
+     */
+    private function evaluateForEachLoop(array $node): void
+    {
+        $array = (new Evaluator($node['arrayName'], $this->env))->evaluate();
+        if(is_array($array)) {
+            foreach ($array as $item) {
+                $this->env->defineVariable($node['itemName'], $item);
+                foreach ($node['body'] as $body) {
+                    (new Evaluator($body, $this->env))->evaluate();
+                }
+            }
+        }else {
+            throw new Exception("The variable '{$node['arrayName']}' is not an array.");
+        }
     }
 }

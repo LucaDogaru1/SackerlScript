@@ -25,6 +25,9 @@ class Parser
         $forLoop = $this->parseForLoop($tokenIndex);
         if ($forLoop) return $forLoop;
 
+        $forEachLoop = $this->parseForEach($tokenIndex);
+        if($forEachLoop) return $forEachLoop;
+
         $whileLoop = $this->parseWhileLoop($tokenIndex);
         if ($whileLoop) return $whileLoop;
 
@@ -56,7 +59,10 @@ class Parser
         if ($array) return $array;
 
         $arrayAccess = $this->parseArrayAccess($tokenIndex);
-        if($arrayAccess) return $arrayAccess;
+        if ($arrayAccess) return $arrayAccess;
+
+        $property = $this->parsePropertyAccess($tokenIndex);
+        if($property) return $property;
 
         $functionCall = $this->parseFunctionCall($tokenIndex);
         if ($functionCall) return $functionCall;
@@ -665,7 +671,7 @@ class Parser
         $propertyAccess = $this->parsePropertyAccess($tokenIndex);
         if ($propertyAccess) {
             [$rightNode, $tokenIndex] = $propertyAccess;
-        }  else {
+        } else {
             $right = $this->parseExpression($tokenIndex);
             if (!$right) throw new Exception('Expected right-hand side expression in loop condition');
             [$rightNode, $tokenIndex] = $right;
@@ -728,9 +734,35 @@ class Parser
         $tokenIndex++;
 
         $property = $this->parseIdentifier($tokenIndex);
-        if (!$property || $property[0]['name'] !== 'size') throw new Exception("Expected property name after '.'");
+        if (!$property) throw new Exception("Expected property name after '.'");
 
         [$propertyNode, $tokenIndex] = $property;
+
+        $openParenthesis = $this->currentToken($tokenIndex);
+
+        if($openParenthesis && $openParenthesis[0] == 'T_OPENING_PARENTHESIS') {
+            $tokenIndex++;
+            [$valueNode, $tokenIndex] = $this->parseExpression($tokenIndex);
+            if (!$valueNode) return null;
+
+            $closingParenthesis = $this->currentToken($tokenIndex);
+            if (!$closingParenthesis || $closingParenthesis[0] !== 'T_CLOSING_PARENTHESIS') {
+                throw new Exception("Expected closing parenthesis for method call.");
+            }
+            $tokenIndex++;
+
+            return [
+                [
+                    'type' => 'property_access',
+                    'object' => $objectNode,
+                    'property' => $propertyNode['name'],
+                    'value' => $valueNode
+                ],
+                $tokenIndex
+            ];
+        }
+
+
         return [
             [
                 'type' => 'property_access',
@@ -758,10 +790,10 @@ class Parser
             if ($closeBracket && $closeBracket[0] == 'T_CLOSING_BRACKET') {
                 return [
                     [
-                    'type' => 'array_access',
-                    'array' => $arrayName['name'],
-                    'index' => $index
-                ], $tokenIndex + 1
+                        'type' => 'array_access',
+                        'array' => $arrayName['name'],
+                        'index' => $index
+                    ], $tokenIndex + 1
                 ];
             }
         }
@@ -792,12 +824,60 @@ class Parser
                 $tokenIndex
             ];
         }
-
         return null;
     }
 
-    private function parsePushToArray() {
+    /**
+     * @throws Exception
+     */
+    private function parseForEach(int $tokenIndex) :?array
+    {
+        $token = $this->currentToken($tokenIndex);
+        if($token && $token[0] == 'T_FOREACH') {
+            $tokenIndex++;
+            $openParenthesis = $this->currentToken($tokenIndex);
 
+            if($openParenthesis && $openParenthesis[0] == 'T_OPENING_PARENTHESIS') {
+                $tokenIndex++;
+                $array = $this->parseIdentifier($tokenIndex);
+                if (!$array) return null;
+                [$arrayName, $tokenIndex] = $array;
+                $as = $this->currentToken($tokenIndex);
+
+                if($as && $as[0] == 'T_AS') {
+                    $tokenIndex++;
+                    $itemName = $this->parseIdentifier($tokenIndex);
+                    if (!$itemName) return null;
+                    [$name, $tokenIndex] = $itemName;
+                    $closingParenthesis = $this->currentToken($tokenIndex);
+
+                    if($closingParenthesis && $closingParenthesis[0] == 'T_CLOSING_PARENTHESIS') {
+                        $tokenIndex++;
+                        $openingBrace = $this->currentToken($tokenIndex);
+
+                        if($openingBrace && $openingBrace[0] == 'T_OPENING_BRACE') {
+                            $tokenIndex++;
+                            [$body, $tokenIndex] = $this->parseCodeBlock($tokenIndex);
+                            $closingBrace = $this->currentToken($tokenIndex);
+
+                            if($closingBrace && $closingBrace[0] == 'T_CLOSING_BRACE') {
+                                return [
+                                    [
+                                        'type' => 'forEach',
+                                        'arrayName'=> $arrayName,
+                                        'itemName' => $name['name'],
+                                        'body' => $body
+                                    ],
+                                    $tokenIndex + 1
+                                ];
+                            }
+                        }
+                    }
+                }
+
+            }
+        }
+        return null;
     }
 
 }
