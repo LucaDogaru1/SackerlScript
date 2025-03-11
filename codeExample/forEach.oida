@@ -1,0 +1,5 @@
+heast test = ["ich bin ein item", "ich auch", 3, 10]
+
+fiaOis(test als item) {
+oida.sag(item)
+}

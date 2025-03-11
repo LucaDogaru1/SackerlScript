@@ -1,0 +1,19 @@
+heast test = ["hallo", "wie gehts", 4, 10]
+
+
+heast array = test.ausse(3)
+
+aufi(i = 0; i klana array.numma ; i plusplus) {
+oida.sag(test[i])
+}
+
+test.ane("ich bin neu")
+
+aufi(i = 0; i klana test.numma ; i plusplus) {
+oida.sag(test[i])
+}
+
+
+
+
+
