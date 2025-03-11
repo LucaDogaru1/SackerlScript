@@ -16,6 +16,7 @@ class Evaluator
      */
     public function evaluate()
     {
+
         switch ($this->node['type']) {
 
             case 'literal':
@@ -37,20 +38,45 @@ class Evaluator
             case 'assignment':
             case 'variable':
                 $varName = $this->node['name'];
+                if($this->isVariableArray($varName)) return $this->isVariableArray($varName);
                 $varValue = (new Evaluator($this->node['value'], $this->env))->evaluate();
                 $this->env->defineVariable($varName, $varValue);
                 return $varValue;
+
+            case 'array_assignment':
+                $arrayName = $this->node['array'];
+                $index = (new Evaluator($this->node['index'], $this->env))->evaluate();
+                $arrayValue = (new Evaluator($this->node['value'], $this->env))->evaluate();
+                $array = $this->env->getVariable($arrayName);
+                if (!is_array($array)) {
+                    throw new Exception("Variable '$arrayName' is not an array.");
+                }
+                $array[$index] = $arrayValue;
+                $this->env->defineVariable($arrayName, $array);
+                return $arrayValue;
+
+            case 'array_access':
+                $arrayName = $this->node['array'];
+                $index = (new Evaluator($this->node['index'], $this->env))->evaluate();
+                $array = $this->env->getVariable($arrayName);
+                return $array[$index];
+
+            case 'property_access':
+                $object = (new Evaluator($this->node['object'], $this->env))->evaluate();
+                $property = $this->node['property'];
+                if ($property === 'size' && is_array($object)) return count($object);
+                throw new Exception("Unknown property '$property' for object");
 
             case 'arithmeticOperation' :
                 if (isset($this->node['operand'])) {
                     $left = $this->evaluateOperand($this->node['operand']);
                     switch ($this->node['operator']) {
                         case 'plusplus':
-                            $updatedValue = $left + 1 ;
+                            $updatedValue = $left + 1;
                             $this->env->defineVariable($this->node['operand']['name'], $updatedValue);
                             return $updatedValue;
                         case 'minusminus':
-                            $updatedValue = $left -1;
+                            $updatedValue = $left - 1;
                             $this->env->defineVariable($this->node['operand']['name'], $updatedValue);
                             return $updatedValue;
                         default :
@@ -220,7 +246,7 @@ class Evaluator
                 $result = (new Evaluator($statement, $this->env))->evaluate();
             }
             return $result;
-        } else if(!$shouldExecute) {
+        } else if (!$shouldExecute) {
             return null;
         }
 
@@ -327,7 +353,7 @@ class Evaluator
     /**
      * @throws Exception
      */
-    private function evaluateForLoop()
+    private function evaluateForLoop(): void
     {
         (new Evaluator($this->node['initialization'], $this->env))->evaluate();
 
@@ -342,12 +368,29 @@ class Evaluator
     /**
      * @throws Exception
      */
-    private function evaluateWhileLoop(array $node)
+    private function evaluateWhileLoop(array $node): void
     {
-        while($this->evaluateConditionOperator($node)) {
-            foreach($this->node['body'] as $body) {
+        while ($this->evaluateConditionOperator($node)) {
+            foreach ($this->node['body'] as $body) {
                 (new Evaluator($body, $this->env))->evaluate();
             }
         }
+    }
+
+    /**
+     * @throws Exception
+     */
+    private function isVariableArray(string $varName): ?array
+    {
+
+        if (isset($this->node['array'])) {
+            $varValue = [];
+            foreach ($this->node['array'] as $value) {
+                $varValue[] = (new Evaluator($value, $this->env))->evaluate();
+            }
+            $this->env->defineVariable($varName, $varValue);
+            return $varValue;
+        }
+        return null;
     }
 }

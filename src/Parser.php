@@ -31,6 +31,9 @@ class Parser
         $function = $this->parsFunction($tokenIndex);
         if ($function) return $function;
 
+        $arrayAssign = $this->parseArrayAssignment($tokenIndex);
+        if ($arrayAssign) return $arrayAssign;
+
         $variable = $this->parseVariable($tokenIndex);
         if ($variable) return $variable;
 
@@ -48,6 +51,13 @@ class Parser
 
     private function parseExpression(int $tokenIndex): ?array
     {
+
+        $array = $this->parseArray($tokenIndex);
+        if ($array) return $array;
+
+        $arrayAccess = $this->parseArrayAccess($tokenIndex);
+        if($arrayAccess) return $arrayAccess;
+
         $functionCall = $this->parseFunctionCall($tokenIndex);
         if ($functionCall) return $functionCall;
 
@@ -100,6 +110,7 @@ class Parser
         if ($boolean) {
             return [['type' => 'literal', 'value' => $boolean[0]], $boolean[1]];
         }
+
 
         return null;
     }
@@ -247,14 +258,19 @@ class Parser
 
                 if ($equalToken && $equalToken[0] == 'T_ASSIGN') {
                     $tokenIndex++;
+
+                    $arrayResult = $this->parseArray($tokenIndex);
+                    if ($arrayResult) {
+                        [$valueNode, $tokenIndex] = $arrayResult;
+
+                        return [['type' => 'variable', 'name' => $variableName, 'array' => $valueNode], $tokenIndex];
+                    }
+
                     $expressionResult = $this->parseExpression($tokenIndex);
-
-                    if (!$expressionResult) return null;
-
-                    [$valueNode, $tokenIndex] = $expressionResult;
-
-                    return [['type' => 'variable', 'name' => $variableName, 'value' => $valueNode], $tokenIndex];
-
+                    if ($expressionResult) {
+                        [$valueNode, $tokenIndex] = $expressionResult;
+                        return [['type' => 'variable', 'name' => $variableName, 'value' => $valueNode], $tokenIndex];
+                    }
                 }
             }
         }
@@ -294,7 +310,6 @@ class Parser
             if ($parenthesisToken && $parenthesisToken[0] == 'T_OPENING_PARENTHESIS') {
 
                 [$values, $tokenIndex] = $this->checkForMultipleExpressionsInParenthesis($tokenIndex);
-
                 $closingToken = $this->currentToken($tokenIndex);
 
                 if ($closingToken && $closingToken[0] == 'T_CLOSING_PARENTHESIS') {
@@ -432,7 +447,7 @@ class Parser
                 $closingBrace = $this->currentToken($tokenIndex);
 
                 if ($closingBrace && $closingBrace[0] == 'T_CLOSING_BRACE') {
-                     $ifNode['else'] = $body;
+                    $ifNode['else'] = $body;
                 }
             }
         }
@@ -575,7 +590,6 @@ class Parser
                                 [$body, $tokenIndex] = $this->parseCodeBlock($tokenIndex);
                                 $closingBrace = $this->currentToken($tokenIndex);
 
-
                                 if ($closingBrace && $closingBrace[0] == 'T_CLOSING_BRACE') {
                                     if (!$body) {
                                         throw new Exception("Body of Loop  is empty");
@@ -612,8 +626,7 @@ class Parser
                     if ($openingBrace && $openingBrace[0] == 'T_OPENING_BRACE') {
                         $tokenIndex++;
                         [$body, $tokenIndex] = $this->parseCodeBlock($tokenIndex);
-                        $closingBrace = $this->currentToken($tokenIndex);
-
+                        $closingBrace = $this->currentToken($tokenIndex);;
 
                         if ($closingBrace && $closingBrace[0] == 'T_CLOSING_BRACE') {
                             if (!$body) {
@@ -649,10 +662,15 @@ class Parser
 
         [$operator, $tokenIndex] = $comparisonOperator;
 
-        $right = $this->parseExpression($tokenIndex);
-        if (!$right) throw new Exception('Expected right-hand side expression in loop condition');
+        $propertyAccess = $this->parsePropertyAccess($tokenIndex);
+        if ($propertyAccess) {
+            [$rightNode, $tokenIndex] = $propertyAccess;
+        }  else {
+            $right = $this->parseExpression($tokenIndex);
+            if (!$right) throw new Exception('Expected right-hand side expression in loop condition');
+            [$rightNode, $tokenIndex] = $right;
+        }
 
-        [$rightNode, $tokenIndex] = $right;
 
         return [
             [
@@ -665,5 +683,121 @@ class Parser
         ];
     }
 
-}
 
+    private function parseArray(int $tokenIndex): ?array
+    {
+        $token = $this->currentToken($tokenIndex);
+        $values = [];
+
+        if ($token && $token[0] == 'T_OPENING_BRACKET') {
+            $tokenIndex++;
+            while (true) {
+                $literal = $this->parseLiteralValue($tokenIndex);
+
+                if (!$literal) break;
+                [$value, $tokenIndex] = $literal;
+                $values[] = $value;
+                $nextToken = $this->currentToken($tokenIndex);
+
+                if ($nextToken && $nextToken[0] == 'T_SEPARATOR') {
+                    $tokenIndex++;
+                    continue;
+                }
+                break;
+            }
+
+            $closingBracket = $this->currentToken($tokenIndex);
+            if ($closingBracket && $closingBracket[0] === 'T_CLOSING_BRACKET') {
+
+                return [$values, $tokenIndex + 1];
+            }
+        }
+        return null;
+    }
+
+    private function parsePropertyAccess(int $tokenIndex): ?array
+    {
+        $identifier = $this->parseIdentifier($tokenIndex);
+        if (!$identifier) return null;
+
+        [$objectNode, $tokenIndex] = $identifier;
+
+        $dotToken = $this->currentToken($tokenIndex);
+        if (!$dotToken || $dotToken[0] !== 'T_DOT') return null;
+
+        $tokenIndex++;
+
+        $property = $this->parseIdentifier($tokenIndex);
+        if (!$property || $property[0]['name'] !== 'size') throw new Exception("Expected property name after '.'");
+
+        [$propertyNode, $tokenIndex] = $property;
+        return [
+            [
+                'type' => 'property_access',
+                'object' => $objectNode,
+                'property' => $propertyNode['name']
+            ],
+            $tokenIndex
+        ];
+    }
+
+    private function parseArrayAccess(int $tokenIndex): ?array
+    {
+        $array = $this->parseIdentifier($tokenIndex);
+        if (!$array) return null;
+        [$arrayName, $tokenIndex] = $array;
+
+        $openBracket = $this->currentToken($tokenIndex);
+        if ($openBracket && $openBracket[0] == 'T_OPENING_BRACKET') {
+            $tokenIndex++;
+
+            [$index, $tokenIndex] = $this->parseExpression($tokenIndex);
+            if (!$index) return null;
+
+            $closeBracket = $this->currentToken($tokenIndex);
+            if ($closeBracket && $closeBracket[0] == 'T_CLOSING_BRACKET') {
+                return [
+                    [
+                    'type' => 'array_access',
+                    'array' => $arrayName['name'],
+                    'index' => $index
+                ], $tokenIndex + 1
+                ];
+            }
+        }
+        return null;
+    }
+
+    private function parseArrayAssignment(int $tokenIndex): ?array
+    {
+        $arrayAccess = $this->parseArrayAccess($tokenIndex);
+        if (!$arrayAccess) return null;
+
+        [$arrayNode, $tokenIndex] = $arrayAccess;
+
+        $assignToken = $this->currentToken($tokenIndex);
+        if ($assignToken && $assignToken[0] == 'T_ASSIGN') {
+            $tokenIndex++;
+
+            [$valueNode, $tokenIndex] = $this->parseExpression($tokenIndex);
+            if (!$valueNode) return null;
+
+            return [
+                [
+                    'type' => 'array_assignment',
+                    'array' => $arrayNode['array'],
+                    'index' => $arrayNode['index'],
+                    'value' => $valueNode
+                ],
+                $tokenIndex
+            ];
+        }
+
+        return null;
+    }
+
+    private function parsePushToArray() {
+
+    }
+
+}

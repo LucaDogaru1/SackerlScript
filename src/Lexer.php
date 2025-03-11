@@ -37,6 +37,7 @@ class Lexer
             'T_SEMICOLON' => '/;/',
             'T_FOR' => '\baufi\b',
             'T_WHILE' => '/\bgeh weida\b/',
+            'T_DOT' => '/\./',
             'T_IDENTIFIER' => '/[a-zA-Z_]\w*/',
 
         ];

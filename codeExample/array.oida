@@ -1,0 +1,8 @@
+heast test = ["hallo", "WIE GEHTS", 4, basst, sichaned]
+
+aufi(i = 0; i klana test.size; i plusplus) {
+wenn(i gleich 1) {
+test[i] = "geändert"
+}
+oida.sag(test[i])
+}
