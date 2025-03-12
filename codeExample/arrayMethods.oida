@@ -1,15 +1,14 @@
-heast test = ["hallo", "wie gehts", 4, 10]
+heast test = [2, 4, 6]
 
 
-heast array = test.ausse(3)
+heast array = test.ausse(2)
 
-aufi(i = 0; i klana array.numma ; i plusplus) {
-oida.sag(test[i])
-}
+test.ane("ich bin neu")// pusht neuen eintrag hinten ins array
+test.gibts(1) // checkt ob es das Value im Array gibt
+test.nimmIrgendwas // nimmt irgendein Value aus dem Array
+test.ausse(3) // entfernt die letzten einträge vom array
 
-test.ane("ich bin neu")
-
-aufi(i = 0; i klana test.numma ; i plusplus) {
+aufi(i = 0; i klana test.umfang ; i plusplus) {
 oida.sag(test[i])
 }
 

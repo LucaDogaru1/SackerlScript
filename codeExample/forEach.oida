@@ -1,5 +1,5 @@
-heast test = ["ich bin ein item", "ich auch", 3, 10]
+heast test = [4, 3, 10]
 
 fiaOis(test als item) {
-oida.sag(item)
+oida.sag(item mal 2 )
 }

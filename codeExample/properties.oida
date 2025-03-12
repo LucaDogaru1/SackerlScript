@@ -1,0 +1,5 @@
+heast myArray = [2, 3, 4]
+heast number = 3
+
+oida.sag(myArray.umfang) // gibt die länge vom array an
+oida.sag(number.isNumma) // checkt ob literal eine zahl ist gibt bool zurück

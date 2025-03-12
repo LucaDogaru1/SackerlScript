@@ -1,7 +1,7 @@
 heast test = ["hallo", "WIE GEHTS", 4, basst, sichaned]
 
 
-aufi(i = 0; i klana test.numma; i plusplus) {
+aufi(i = 0; i klana test.umfang; i plusplus) {
 wenn(i gleich 1) {
 test[i] = "geändert"
 }
