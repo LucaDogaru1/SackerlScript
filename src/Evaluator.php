@@ -276,6 +276,7 @@ class Evaluator
      */
     private function evaluateConditionOperator(array $node): bool
     {
+
         if (empty($node['condition'])) {
             return $this->handleSingleCondition($node);
         }
@@ -489,10 +490,9 @@ class Evaluator
         return array_values((array)array_filter($array, function ($item) use ($itemName, $node, $body) {
             $this->env->defineVariable($itemName, $item);
 
-            if (isset($body['condition'])) {
-                $conditionResult = $this->evaluateConditionOperator($body);
+            if (isset($node['condition'])) {
+                $conditionResult = $this->evaluateConditionOperator($node);
             } else {
-
                 $conditionResult = $this->evaluateComparison($body[0], $body[1][0], $body[2]);
             }
             return $conditionResult;

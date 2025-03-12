@@ -906,9 +906,8 @@ class Parser
                 $openBrace = $this->currentToken($tokenIndex);
 
                 if($openBrace && $openBrace[0] == 'T_OPENING_BRACE') {
-
-                    [$body, $tokenIndex] = $this->checkForCondition($tokenIndex);
-                    if(!$body) throw new Exception('body of filter is empty');
+                    [$condition, $tokenIndex] = $this->checkForCondition($tokenIndex);
+                    if(!$condition) throw new Exception('body of filter is empty');
                     $closingBrace = $this->currentToken($tokenIndex);
 
                     if($closingBrace && $closingBrace[0] == 'T_CLOSING_BRACE' ) {
@@ -916,12 +915,21 @@ class Parser
                         $closingParenthesis = $this->currentToken($tokenIndex);
 
                         if($closingParenthesis && $closingParenthesis[0] == 'T_CLOSING_PARENTHESIS') {
+                            if (count($condition) > 3) {
+
+                                return [[ 'type' => 'filter',
+                                    'arrayName' => $arrayName,
+                                    'itemName' => $name,
+                                    'condition' => $condition,
+                                    'body' => $condition
+                                ], $tokenIndex + 1];
+                            }
                             return [
                                 [
                                     'type' => 'filter',
                                     'arrayName' => $arrayName,
                                     'itemName' => $name,
-                                    'body' => $body
+                                    'body' => $condition
                                 ],
                                 $tokenIndex + 1
                             ];

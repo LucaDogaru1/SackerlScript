@@ -1,6 +1,6 @@
 heast test = [23, 24, 2, 5]
 
-heast new = test.nimmAusse(item => {item klana 6})
+heast new = test.nimmAusse(item => {item klana 6 oda item klana 3})
 
 fiaOis(new als item) {
 oida.sag(item)
