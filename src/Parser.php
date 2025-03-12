@@ -762,7 +762,6 @@ class Parser
             ];
         }
 
-
         return [
             [
                 'type' => 'property_access',
