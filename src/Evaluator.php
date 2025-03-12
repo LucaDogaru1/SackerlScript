@@ -17,6 +17,7 @@ class Evaluator
     public function evaluate()
     {
 
+
         switch ($this->node['type']) {
 
             case 'literal':
@@ -64,9 +65,12 @@ class Evaluator
             case 'property_access':
                 $object = (new Evaluator($this->node['object'], $this->env))->evaluate();
                 $property = $this->node['property'];
-                if ($property === 'numma' && is_array($object)) return count($object);
+                if ($property === 'umfang' && is_array($object)) return count($object);
                 if ($property === 'ane' && is_array($object)) return $this->handlePushArray();
                 if ($property === 'ausse' && is_array($object)) return $this->handleSliceArray();
+                if ($property === 'isNumma' && !is_array($object)) return is_numeric($object) ? 'true' : 'false';
+                if ($property === 'gibts' && is_array($object)) return $this->existInArray() ? 'true' : 'false';
+                if ($property === 'nimmIrgendwas' && is_array($object)) return $this->takeRandomValue();
                 throw new Exception("Unknown property '$property' for object");
 
 
@@ -423,8 +427,8 @@ class Evaluator
         $arrayName = $this->node['object']['name'];
         $array = $this->env->getVariable($arrayName);
         $value = (new Evaluator($this->node['value'], $this->env))->evaluate();
-        if(!is_numeric($value)) throw new Exception("index needs to be a number .weg()");
-        $index = (int) $value;
+        if (!is_numeric($value)) throw new Exception("index needs to be a number .weg()");
+        $index = (int)$value;
         return array_slice($array, $index);
     }
 
@@ -434,15 +438,37 @@ class Evaluator
     private function evaluateForEachLoop(array $node): void
     {
         $array = (new Evaluator($node['arrayName'], $this->env))->evaluate();
-        if(is_array($array)) {
+        if (is_array($array)) {
             foreach ($array as $item) {
                 $this->env->defineVariable($node['itemName'], $item);
                 foreach ($node['body'] as $body) {
                     (new Evaluator($body, $this->env))->evaluate();
                 }
             }
-        }else {
+        } else {
             throw new Exception("The variable '{$node['arrayName']}' is not an array.");
         }
+    }
+
+    /**
+     * @throws Exception
+     */
+    private function existInArray():bool
+    {
+        $arrayName = $this->node['object']['name'];
+        $array = $this->env->getVariable($arrayName);
+        $value = (new Evaluator($this->node['value'], $this->env))->evaluate();
+        return in_array($value, $array, true);
+    }
+
+    /**
+     * @throws Exception
+     */
+    private function takeRandomValue()
+    {
+        $arrayName = $this->node['object']['name'];
+        $array = $this->env->getVariable($arrayName);
+        $randomKey = array_rand($array);
+        return $array[$randomKey];
     }
 }
