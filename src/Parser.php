@@ -52,6 +52,9 @@ class Parser
         return null;
     }
 
+    /**
+     * @throws Exception
+     */
     private function parseExpression(int $tokenIndex): ?array
     {
 
@@ -721,6 +724,9 @@ class Parser
         return null;
     }
 
+    /**
+     * @throws Exception
+     */
     private function parsePropertyAccess(int $tokenIndex): ?array
     {
         $identifier = $this->parseIdentifier($tokenIndex);
@@ -730,13 +736,14 @@ class Parser
 
         $dotToken = $this->currentToken($tokenIndex);
         if (!$dotToken || $dotToken[0] !== 'T_DOT') return null;
-
         $tokenIndex++;
 
         $property = $this->parseIdentifier($tokenIndex);
         if (!$property) throw new Exception("Expected property name after '.'");
 
         [$propertyNode, $tokenIndex] = $property;
+
+        if($propertyNode['name'] == 'nimmAusse') return $this->parseFilter($tokenIndex, $objectNode);
 
         $openParenthesis = $this->currentToken($tokenIndex);
 
@@ -874,6 +881,53 @@ class Parser
                     }
                 }
 
+            }
+        }
+        return null;
+    }
+
+
+    /**
+     * @throws Exception
+     */
+    private function parseFilter(int $tokenIndex, array $arrayName): ?array
+    {
+        $openingParenthesis = $this->currentToken($tokenIndex);
+        if($openingParenthesis && $openingParenthesis[0] == 'T_OPENING_PARENTHESIS') {
+            $tokenIndex++;
+            $identifier = $this->parseIdentifier($tokenIndex);
+            if(!$identifier) throw new Exception("Missing name in filter function");
+            [$name, $tokenIndex] = $identifier;
+            $filterToken = $this->currentToken($tokenIndex);
+
+
+            if($filterToken && $filterToken[0] == 'T_FILTER_ARROW') {
+                $tokenIndex++;
+                $openBrace = $this->currentToken($tokenIndex);
+
+                if($openBrace && $openBrace[0] == 'T_OPENING_BRACE') {
+
+                    [$body, $tokenIndex] = $this->checkForCondition($tokenIndex);
+                    if(!$body) throw new Exception('body of filter is empty');
+                    $closingBrace = $this->currentToken($tokenIndex);
+
+                    if($closingBrace && $closingBrace[0] == 'T_CLOSING_BRACE' ) {
+                        $tokenIndex++;
+                        $closingParenthesis = $this->currentToken($tokenIndex);
+
+                        if($closingParenthesis && $closingParenthesis[0] == 'T_CLOSING_PARENTHESIS') {
+                            return [
+                                [
+                                    'type' => 'filter',
+                                    'arrayName' => $arrayName,
+                                    'itemName' => $name,
+                                    'body' => $body
+                                ],
+                                $tokenIndex + 1
+                            ];
+                        }
+                    }
+                }
             }
         }
         return null;

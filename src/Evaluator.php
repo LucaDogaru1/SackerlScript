@@ -17,7 +17,6 @@ class Evaluator
     public function evaluate()
     {
 
-
         switch ($this->node['type']) {
 
             case 'literal':
@@ -147,6 +146,10 @@ class Evaluator
             case 'forEach' :
                 $this->evaluateForEachLoop($this->node);
                 return null;
+
+            case 'filter':
+                return $this->evaluateFilter($this->node);
+
 
             default:
                 throw new Exception("Unknown node type: " . $this->node['type'] . "\n");
@@ -453,7 +456,7 @@ class Evaluator
     /**
      * @throws Exception
      */
-    private function existInArray():bool
+    private function existInArray(): bool
     {
         $arrayName = $this->node['object']['name'];
         $array = $this->env->getVariable($arrayName);
@@ -470,5 +473,29 @@ class Evaluator
         $array = $this->env->getVariable($arrayName);
         $randomKey = array_rand($array);
         return $array[$randomKey];
+    }
+
+    /**
+     * @throws Exception
+     */
+    private function evaluateFilter(array $node): array
+    {
+        $array = (new Evaluator($node['arrayName'], $this->env))->evaluate();
+        if (!is_array($array)) throw new Exception("Filter can only be applied to arrays.");
+        $itemName = $this->node['itemName']['name'];
+        $body = $node['body'];
+
+
+        return array_values((array)array_filter($array, function ($item) use ($itemName, $node, $body) {
+            $this->env->defineVariable($itemName, $item);
+
+            if (isset($body['condition'])) {
+                $conditionResult = $this->evaluateConditionOperator($body);
+            } else {
+
+                $conditionResult = $this->evaluateComparison($body[0], $body[1][0], $body[2]);
+            }
+            return $conditionResult;
+        }));
     }
 }

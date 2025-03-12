@@ -24,6 +24,7 @@ class Lexer
             'T_LOGICAL_OR' => '/\boda\b/',
             'T_COMPARISON_OPERATOR' => '/\bgleich\b|\bisned\b|\bklanaglei\b|\b(gößerglei|größerglei)\b|\bklana\b|\bgrößer\b/',
             'T_ARITHMETIC_OPERATOR' => '/(plusplus|minusminus|mal|dividier|plus|minus)/',
+            'T_FILTER_ARROW' => '/=>/',
             'T_ASSIGN' => '/\+=|-=|\*=|\/=|=/',
             'T_NUMBER' => '/\d+/',
             'T_STRING' => '/"(?:.*?)"/',
