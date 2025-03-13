@@ -34,6 +34,10 @@ class Parser
         $function = $this->parsFunction($tokenIndex);
         if ($function) return $function;
 
+        $return = $this->parseReturn($tokenIndex);
+        if($return) return $return;
+
+
         $arrayAssign = $this->parseArrayAssignment($tokenIndex);
         if ($arrayAssign) return $arrayAssign;
 
@@ -329,6 +333,9 @@ class Parser
         return null;
     }
 
+    /**
+     * @throws Exception
+     */
     private function parsFunction(int $tokenIndex): ?array
     {
         $token = $this->currentToken($tokenIndex);
@@ -427,6 +434,7 @@ class Parser
                                 $this->parseElse($ifNode, $tokenIndex);
                                 return [$ifNode, $tokenIndex + 1];
                             }
+
                             $ifNode = ['type' => 'if', 'left' => $condition[0], 'operator' => $condition[1][0], 'right' => $condition[2], 'body' => $body];
                             $this->parseElse($ifNode, $tokenIndex);
                             return [$ifNode, $tokenIndex + 1];
@@ -454,6 +462,7 @@ class Parser
                 $tokenIndex++;
                 [$body, $tokenIndex] = $this->parseCodeBlock($tokenIndex);
                 $closingBrace = $this->currentToken($tokenIndex);
+
 
                 if ($closingBrace && $closingBrace[0] == 'T_CLOSING_BRACE') {
                     $ifNode['else'] = $body;
@@ -937,6 +946,33 @@ class Parser
                     }
                 }
             }
+        }
+        return null;
+    }
+
+    /**
+     * @throws Exception
+     */
+    private function parseReturn(int $tokenIndex):?array
+    {
+        $token = $this->currentToken($tokenIndex);
+        if($token && $token[0] == 'T_RETURN') {
+            $tokenIndex++;
+            $expression = $this->parseExpression($tokenIndex);
+
+            if (!$expression) {
+                return [ ['type' => 'return'], $tokenIndex ];
+            }
+            [$value, $tokenIndex] = $expression;
+
+            return [
+                [
+                    'type' => 'return',
+                    'value' => $value,
+                ],
+                $tokenIndex
+            ];
+
         }
         return null;
     }

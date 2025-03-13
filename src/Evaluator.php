@@ -16,8 +16,11 @@ class Evaluator
      */
     public function evaluate()
     {
-
         switch ($this->node['type']) {
+
+            case 'return':
+                if(!isset($this->node['value'])) return null;
+                return (new Evaluator($this->node['value'], $this->env))->evaluate();
 
             case 'literal':
                 return $this->checkIfBoolean($this->node['value']);
@@ -67,9 +70,14 @@ class Evaluator
                 if ($property === 'umfang' && is_array($object)) return count($object);
                 if ($property === 'ane' && is_array($object)) return $this->handlePushArray();
                 if ($property === 'ausse' && is_array($object)) return $this->handleSliceArray();
-                if ($property === 'isNumma' && !is_array($object)) return is_numeric($object) ? 'true' : 'false';
-                if ($property === 'gibts' && is_array($object)) return $this->existInArray() ? 'true' : 'false';
+                if ($property === 'isNumma' && !is_array($object)) return is_int($object);
+                if ($property === 'zuNumma' && !is_array($object)) return (int)$object;
+                if ($property === 'gibts' && is_array($object)) return $this->existInArray();
                 if ($property === 'nimmIrgendwas' && is_array($object)) return $this->takeRandomValue();
+                if ($property === 'zuText') return $this->convertToString($object);
+                if ($property === 'isText' && !is_array($object)) {
+                    return is_string($object);
+                }
                 throw new Exception("Unknown property '$property' for object");
 
 
@@ -202,7 +210,7 @@ class Evaluator
     private function checkIfBoolean($value)
     {
         if (is_bool($value)) {
-            return $value ? 'true' : 'false';
+            return $value ? 'basst' : 'sichaned';
         } else {
             return $value;
         }
@@ -323,13 +331,10 @@ class Evaluator
      */
     private function handleSingleCondition(array $condition): bool
     {
-
         if (isset($condition['left'], $condition['operator'], $condition['right'])) {
-
             $left = (new Evaluator($condition['left'], $this->env))->evaluate();
             $operator = $condition['operator'];
             $right = (new Evaluator($condition['right'], $this->env))->evaluate();
-
 
             return match ($operator) {
                 'gleich' => $left == $right,
@@ -340,6 +345,10 @@ class Evaluator
                 'klanaglei' => $left <= $right,
                 default => throw new Exception("Unknown comparison operator: " . $operator),
             };
+        }
+
+        if(isset($condition['left']['property'])) {
+            return (new Evaluator($condition['left'], $this->env))->evaluate();
         }
 
         return (new Evaluator($condition['left'], $this->env))->evaluate();
@@ -357,7 +366,7 @@ class Evaluator
         return match ($operator) {
             'klana' => $leftValue < $rightValue,
             'größer' => $leftValue > $rightValue,
-            'gleich' => $leftValue == $rightValue,
+            'gleich' => $leftValue === $rightValue,
             'isned' => $leftValue != $rightValue,
             'größerglei' => $leftValue >= $rightValue,
             'klanaglei' => $leftValue <= $rightValue,
@@ -497,5 +506,18 @@ class Evaluator
             }
             return $conditionResult;
         }));
+    }
+
+    /**
+     * @throws Exception
+     */
+    private function convertToString($object): string
+    {
+
+        if(is_array($object)) {
+            return implode(" ", $object);
+        }
+
+        return (string)$object;
     }
 }
