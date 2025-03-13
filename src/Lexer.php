@@ -22,6 +22,7 @@ class Lexer
             'T_FUNCTION' => '/\bhawara\b/',
             'T_LOGICAL_AND' => '/\bund\b/',
             'T_LOGICAL_OR' => '/\boda\b/',
+            'T_RETURN' => '/\bspeicher\b/',
             'T_COMPARISON_OPERATOR' => '/\bgleich\b|\bisned\b|\bklanaglei\b|\b(gößerglei|größerglei)\b|\bklana\b|\bgrößer\b/',
             'T_ARITHMETIC_OPERATOR' => '/(plusplus|minusminus|mal|dividier|plus|minus)/',
             'T_FILTER_ARROW' => '/=>/',
@@ -58,7 +59,11 @@ class Lexer
         foreach ($matches as $match) {
             foreach ($patterns as $type => $pattern) {
                 if (preg_match('/^' . trim($pattern, '/') . '$/', $match[0])) {
-                    $this->tokens[] = [$type, $match[0]];
+                    $value = $match[0];
+                    if ($type === 'T_STRING') {
+                        $value = trim($value, '"');
+                    }
+                    $this->tokens[] = [$type, $value];
                     break;
                 }
             }
