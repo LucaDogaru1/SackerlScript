@@ -1,8 +1,8 @@
 heast x = 10
 heast y = 5
 
-hawara add(x, y) {
-oida.sag(x plus y)
+hawara add(a, b) {
+oida.sag(a plus b)
 }
 
-add(x, y)
+add(x , y)

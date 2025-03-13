@@ -3,5 +3,4 @@ heast true = basst
 heast false = sichaned
 heast text = "HELLO WOLRD"
 
-
 oida.sag(text, true, false, x)

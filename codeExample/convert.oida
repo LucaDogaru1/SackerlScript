@@ -1,0 +1,7 @@
+heast array = [3, 5, 2]
+heast number = 3231231313213
+heast numberString = "3"
+
+heast arrayString = array.zuText //convertiert ein array zu einem String
+heast numberToString = number.zuText //conventiert eine zahl zu einem String
+heast stringToNumber = numberString.zuNumma//conventiert einen String zu einer Zahl
