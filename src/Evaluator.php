@@ -16,6 +16,8 @@ class Evaluator
      */
     public function evaluate()
     {
+
+
         switch ($this->node['type']) {
 
             case 'return':
@@ -75,9 +77,10 @@ class Evaluator
                 if ($property === 'gibts' && is_array($object)) return $this->existInArray();
                 if ($property === 'nimmIrgendwas' && is_array($object)) return $this->takeRandomValue();
                 if ($property === 'zuText') return $this->convertToString($object);
-                if ($property === 'isText' && !is_array($object)) {
-                    return is_string($object);
-                }
+                if ($property === 'isText' && !is_array($object)) return is_string($object);
+                if ($property === 'isArray') return is_array($object);
+                if ($property === 'keinArray') return !is_array($object);
+                if ($property === 'ordne' && is_array($object)) return $this->handleSort();
                 throw new Exception("Unknown property '$property' for object");
 
 
@@ -157,6 +160,9 @@ class Evaluator
 
             case 'filter':
                 return $this->evaluateFilter($this->node);
+
+            case 'fetch':
+                return $this->handleFetch();
 
 
             default:
@@ -406,7 +412,6 @@ class Evaluator
      */
     private function isVariableArray(string $varName): ?array
     {
-
         if (isset($this->node['array'])) {
             $varValue = [];
             foreach ($this->node['array'] as $value) {
@@ -415,6 +420,7 @@ class Evaluator
             $this->env->defineVariable($varName, $varValue);
             return $varValue;
         }
+
         return null;
     }
 
@@ -440,7 +446,7 @@ class Evaluator
         $arrayName = $this->node['object']['name'];
         $array = $this->env->getVariable($arrayName);
         $value = (new Evaluator($this->node['value'], $this->env))->evaluate();
-        if (!is_numeric($value)) throw new Exception("index needs to be a number .weg()");
+        if (!is_numeric($value)) throw new Exception("index needs to be a number .ausse()");
         $index = (int)$value;
         return array_slice($array, $index);
     }
@@ -519,5 +525,45 @@ class Evaluator
         }
 
         return (string)$object;
+    }
+
+    /**
+     * @throws Exception
+     */
+    private function handleSort()
+    {
+        $arrayName = $this->node['object']['name'];
+        $array = $this->env->getVariable($arrayName);
+
+        sort($array);
+
+        $this->env->defineVariable($arrayName, $array);
+
+        return null;
+    }
+
+    /**
+     * @throws Exception
+     */
+    private function handleFetch()
+    {
+        if(!filter_var($this->node['url'], FILTER_VALIDATE_URL)) return throw new Exception("Invalid Url: " . $this->node['url']);
+
+        $ch = curl_init($this->node['url']);
+        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+        curl_setopt($ch, CURLOPT_FOLLOWLOCATION, true);
+        curl_setopt($ch, CURLOPT_TIMEOUT, 10);
+
+        $response = curl_exec($ch);
+        $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+        curl_close($ch);
+
+        if ($response === false || $httpCode !== 200) {
+            throw new Exception("Failed to fetch data. HTTP Code: $httpCode");
+        }
+
+        $decoded = json_decode($response, true);
+
+        return $decoded ?? $response;
     }
 }

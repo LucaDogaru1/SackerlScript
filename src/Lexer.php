@@ -42,6 +42,8 @@ class Lexer
             'T_FOREACH' => '/\bfiaOis\b/',
             'T_AS' => '/\bals\b/',
             'T_DOT' => '/\./',
+            'T_COMMENT' => '/\bkommentar\b/',
+            'T_FETCH' => '/\bholma\b/',
             'T_IDENTIFIER' => '/[a-zA-Z_]\w*/',
 
         ];

@@ -1,4 +1,4 @@
-heast x = 0
+heast x = 1
 heast y = 2
 
 wenn(x klana y und x klana 5) {

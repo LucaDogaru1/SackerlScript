@@ -6,8 +6,6 @@
 
 **# Implement try- catch Block**
 
-**# Implement line end ?**
-
 **# Implement data structures like array, object etc.**
 
 **# BIG REFACTOR**

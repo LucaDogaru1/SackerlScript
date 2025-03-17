@@ -1,12 +1,10 @@
 heast test = [2, 4, 6]
 
-
-heast array = test.ausse(2)
-
 test.ane("ich bin neu")// pusht neuen eintrag hinten ins array
 test.gibts(1) // checkt ob es das Value im Array gibt
 test.nimmIrgendwas // nimmt ein random Value aus dem Array
 test.ausse(3) // entfernt die letzten x einträge vom array
+test.ordne // gibt das orginale array sortiered zurück
 
 
 aufi(i = 0; i klana test.umfang ; i plusplus) {

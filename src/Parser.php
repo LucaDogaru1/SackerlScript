@@ -26,7 +26,7 @@ class Parser
         if ($forLoop) return $forLoop;
 
         $forEachLoop = $this->parseForEach($tokenIndex);
-        if($forEachLoop) return $forEachLoop;
+        if ($forEachLoop) return $forEachLoop;
 
         $whileLoop = $this->parseWhileLoop($tokenIndex);
         if ($whileLoop) return $whileLoop;
@@ -35,8 +35,7 @@ class Parser
         if ($function) return $function;
 
         $return = $this->parseReturn($tokenIndex);
-        if($return) return $return;
-
+        if ($return) return $return;
 
         $arrayAssign = $this->parseArrayAssignment($tokenIndex);
         if ($arrayAssign) return $arrayAssign;
@@ -62,6 +61,9 @@ class Parser
     private function parseExpression(int $tokenIndex): ?array
     {
 
+        $fetch = $this->parseFetchGetMethod($tokenIndex);
+        if ($fetch) return $fetch;
+
         $array = $this->parseArray($tokenIndex);
         if ($array) return $array;
 
@@ -69,7 +71,7 @@ class Parser
         if ($arrayAccess) return $arrayAccess;
 
         $property = $this->parsePropertyAccess($tokenIndex);
-        if($property) return $property;
+        if ($property) return $property;
 
         $functionCall = $this->parseFunctionCall($tokenIndex);
         if ($functionCall) return $functionCall;
@@ -726,6 +728,9 @@ class Parser
 
             $closingBracket = $this->currentToken($tokenIndex);
             if ($closingBracket && $closingBracket[0] === 'T_CLOSING_BRACKET') {
+                if(!$values) {
+                    return [[], $tokenIndex + 1];
+                }
 
                 return [$values, $tokenIndex + 1];
             }
@@ -752,11 +757,11 @@ class Parser
 
         [$propertyNode, $tokenIndex] = $property;
 
-        if($propertyNode['name'] == 'nimmAusse') return $this->parseFilter($tokenIndex, $objectNode);
+        if ($propertyNode['name'] == 'nimmAusse') return $this->parseFilter($tokenIndex, $objectNode);
 
         $openParenthesis = $this->currentToken($tokenIndex);
 
-        if($openParenthesis && $openParenthesis[0] == 'T_OPENING_PARENTHESIS') {
+        if ($openParenthesis && $openParenthesis[0] == 'T_OPENING_PARENTHESIS') {
             $tokenIndex++;
             [$valueNode, $tokenIndex] = $this->parseExpression($tokenIndex);
             if (!$valueNode) return null;
@@ -845,41 +850,41 @@ class Parser
     /**
      * @throws Exception
      */
-    private function parseForEach(int $tokenIndex) :?array
+    private function parseForEach(int $tokenIndex): ?array
     {
         $token = $this->currentToken($tokenIndex);
-        if($token && $token[0] == 'T_FOREACH') {
+        if ($token && $token[0] == 'T_FOREACH') {
             $tokenIndex++;
             $openParenthesis = $this->currentToken($tokenIndex);
 
-            if($openParenthesis && $openParenthesis[0] == 'T_OPENING_PARENTHESIS') {
+            if ($openParenthesis && $openParenthesis[0] == 'T_OPENING_PARENTHESIS') {
                 $tokenIndex++;
                 $array = $this->parseIdentifier($tokenIndex);
                 if (!$array) return null;
                 [$arrayName, $tokenIndex] = $array;
                 $as = $this->currentToken($tokenIndex);
 
-                if($as && $as[0] == 'T_AS') {
+                if ($as && $as[0] == 'T_AS') {
                     $tokenIndex++;
                     $itemName = $this->parseIdentifier($tokenIndex);
                     if (!$itemName) return null;
                     [$name, $tokenIndex] = $itemName;
                     $closingParenthesis = $this->currentToken($tokenIndex);
 
-                    if($closingParenthesis && $closingParenthesis[0] == 'T_CLOSING_PARENTHESIS') {
+                    if ($closingParenthesis && $closingParenthesis[0] == 'T_CLOSING_PARENTHESIS') {
                         $tokenIndex++;
                         $openingBrace = $this->currentToken($tokenIndex);
 
-                        if($openingBrace && $openingBrace[0] == 'T_OPENING_BRACE') {
+                        if ($openingBrace && $openingBrace[0] == 'T_OPENING_BRACE') {
                             $tokenIndex++;
                             [$body, $tokenIndex] = $this->parseCodeBlock($tokenIndex);
                             $closingBrace = $this->currentToken($tokenIndex);
 
-                            if($closingBrace && $closingBrace[0] == 'T_CLOSING_BRACE') {
+                            if ($closingBrace && $closingBrace[0] == 'T_CLOSING_BRACE') {
                                 return [
                                     [
                                         'type' => 'forEach',
-                                        'arrayName'=> $arrayName,
+                                        'arrayName' => $arrayName,
                                         'itemName' => $name['name'],
                                         'body' => $body
                                     ],
@@ -902,31 +907,31 @@ class Parser
     private function parseFilter(int $tokenIndex, array $arrayName): ?array
     {
         $openingParenthesis = $this->currentToken($tokenIndex);
-        if($openingParenthesis && $openingParenthesis[0] == 'T_OPENING_PARENTHESIS') {
+        if ($openingParenthesis && $openingParenthesis[0] == 'T_OPENING_PARENTHESIS') {
             $tokenIndex++;
             $identifier = $this->parseIdentifier($tokenIndex);
-            if(!$identifier) throw new Exception("Missing name in filter function");
+            if (!$identifier) throw new Exception("Missing name in filter function");
             [$name, $tokenIndex] = $identifier;
             $filterToken = $this->currentToken($tokenIndex);
 
 
-            if($filterToken && $filterToken[0] == 'T_FILTER_ARROW') {
+            if ($filterToken && $filterToken[0] == 'T_FILTER_ARROW') {
                 $tokenIndex++;
                 $openBrace = $this->currentToken($tokenIndex);
 
-                if($openBrace && $openBrace[0] == 'T_OPENING_BRACE') {
+                if ($openBrace && $openBrace[0] == 'T_OPENING_BRACE') {
                     [$condition, $tokenIndex] = $this->checkForCondition($tokenIndex);
-                    if(!$condition) throw new Exception('body of filter is empty');
+                    if (!$condition) throw new Exception('body of filter is empty');
                     $closingBrace = $this->currentToken($tokenIndex);
 
-                    if($closingBrace && $closingBrace[0] == 'T_CLOSING_BRACE' ) {
+                    if ($closingBrace && $closingBrace[0] == 'T_CLOSING_BRACE') {
                         $tokenIndex++;
                         $closingParenthesis = $this->currentToken($tokenIndex);
 
-                        if($closingParenthesis && $closingParenthesis[0] == 'T_CLOSING_PARENTHESIS') {
+                        if ($closingParenthesis && $closingParenthesis[0] == 'T_CLOSING_PARENTHESIS') {
                             if (count($condition) > 3) {
 
-                                return [[ 'type' => 'filter',
+                                return [['type' => 'filter',
                                     'arrayName' => $arrayName,
                                     'itemName' => $name,
                                     'condition' => $condition,
@@ -953,15 +958,15 @@ class Parser
     /**
      * @throws Exception
      */
-    private function parseReturn(int $tokenIndex):?array
+    private function parseReturn(int $tokenIndex): ?array
     {
         $token = $this->currentToken($tokenIndex);
-        if($token && $token[0] == 'T_RETURN') {
+        if ($token && $token[0] == 'T_RETURN') {
             $tokenIndex++;
             $expression = $this->parseExpression($tokenIndex);
 
             if (!$expression) {
-                return [ ['type' => 'return'], $tokenIndex ];
+                return [['type' => 'return'], $tokenIndex];
             }
             [$value, $tokenIndex] = $expression;
 
@@ -973,6 +978,30 @@ class Parser
                 $tokenIndex
             ];
 
+        }
+        return null;
+    }
+
+    /**
+     * @throws Exception
+     */
+    private function parseFetchGetMethod(int $tokenIndex) :?array
+    {
+        $token = $this->currentToken($tokenIndex);
+        if($token && $token[0] == 'T_FETCH') {
+            $tokenIndex++;
+            $openParenthesis = $this->currentToken($tokenIndex);
+
+            if($openParenthesis && $openParenthesis[0] == 'T_OPENING_PARENTHESIS') {
+                $tokenIndex++;
+                [$url, $tokenIndex] = $this->parseString($tokenIndex);
+                if(!$url) return throw new Exception("Invalid url");
+                $closingParenthesis = $this->currentToken($tokenIndex);
+
+                if($closingParenthesis && $closingParenthesis[0] == 'T_CLOSING_PARENTHESIS') {
+                    return [['type' => 'fetch', 'url' => $url], $tokenIndex + 1];
+                }
+            }
         }
         return null;
     }
