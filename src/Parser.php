@@ -273,8 +273,8 @@ class Parser
 
                 if ($equalToken && $equalToken[0] == 'T_ASSIGN') {
                     $tokenIndex++;
-
                     $arrayResult = $this->parseArray($tokenIndex);
+
                     if ($arrayResult) {
                         [$valueNode, $tokenIndex] = $arrayResult;
 
@@ -704,10 +704,19 @@ class Parser
     }
 
 
+    /**
+     * @throws Exception
+     */
     private function parseArray(int $tokenIndex): ?array
     {
         $token = $this->currentToken($tokenIndex);
         $values = [];
+
+        $fetch = $this->parseFetchGetMethod($tokenIndex);
+        if($fetch) {
+            [$value, $tokenIndex] = $fetch;
+            return [$value, $tokenIndex];
+        }
 
         if ($token && $token[0] == 'T_OPENING_BRACKET') {
             $tokenIndex++;

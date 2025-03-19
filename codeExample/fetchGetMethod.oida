@@ -1,23 +1,21 @@
 heast test = holma("https://api.open-meteo.com/v1/forecast?latitude=51.5074&longitude=-0.1278&current_weather=true")
 
-heast new = [1]
+heast new = test[0]
+
+heast newnew = []
 
 
 
-fiaOis(test als item) {
+fiaOis(new als item) {
 wenn(item.keinArray){
-new.ane(item)
+newnew.ane(item)
 }
 wenn(item.isArray) {
 fiaOis(item als i) {
-new.ane(i)
+newnew.ane(i)
   }
  }
 }
 
-
-fiaOis(new als n) {
-oida.sag(n)
-}
-
+fiaOis(newnew als n) {oida.sag(n)}
 

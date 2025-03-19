@@ -16,8 +16,6 @@ class Evaluator
      */
     public function evaluate()
     {
-
-
         switch ($this->node['type']) {
 
             case 'return':
@@ -43,10 +41,18 @@ class Evaluator
             case 'assignment':
             case 'variable':
                 $varName = $this->node['name'];
-                if ($this->isVariableArray($varName)) return $this->isVariableArray($varName);
-                $varValue = (new Evaluator($this->node['value'], $this->env))->evaluate();
-                $this->env->defineVariable($varName, $varValue);
-                return $varValue;
+                if ($this->isVariableArray($varName)) {
+                    return $this->isVariableArray($varName);
+                }
+                if(!empty($this->node['value'])) {
+                    $varValue = (new Evaluator($this->node['value'], $this->env))->evaluate();
+                    $this->env->defineVariable($varName, $varValue);
+                    return $varValue;
+                } else {
+                    $this->env->defineVariable($varName, []); // for now hared coded array if value after assign is empty
+                    return null;
+                }
+
 
             case 'array_assignment':
                 $arrayName = $this->node['array'];
@@ -161,8 +167,7 @@ class Evaluator
             case 'filter':
                 return $this->evaluateFilter($this->node);
 
-            case 'fetch':
-                return $this->handleFetch();
+
 
 
             default:
@@ -412,14 +417,23 @@ class Evaluator
      */
     private function isVariableArray(string $varName): ?array
     {
+
         if (isset($this->node['array'])) {
             $varValue = [];
-            foreach ($this->node['array'] as $value) {
-                $varValue[] = (new Evaluator($value, $this->env))->evaluate();
+            if(isset($this->node['array']['type']) && $this->node['array']['type'] === 'fetch') {
+                $varValue[] = $this->handleFetch();
+                $this->env->defineVariable($varName,$varValue);
+            } else if (empty($this->node['array'])) {
+                $this->env->defineVariable($varName, $varValue);
+            } else if (!isset($this->node['array']['type'])) {
+                foreach ($this->node['array'] as $value) {
+                    $varValue[] = (new Evaluator($value, $this->env))->evaluate();
+                }
+                $this->env->defineVariable($varName, $varValue);
             }
-            $this->env->defineVariable($varName, $varValue);
             return $varValue;
         }
+
 
         return null;
     }
@@ -547,9 +561,10 @@ class Evaluator
      */
     private function handleFetch()
     {
-        if(!filter_var($this->node['url'], FILTER_VALIDATE_URL)) return throw new Exception("Invalid Url: " . $this->node['url']);
+        if(!filter_var($this->node['array']['url'], FILTER_VALIDATE_URL)) return throw new Exception("Invalid Url: " . $this->node['url']);
 
-        $ch = curl_init($this->node['url']);
+        $ch = curl_init($this->node['array']['url']);
+
         curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
         curl_setopt($ch, CURLOPT_FOLLOWLOCATION, true);
         curl_setopt($ch, CURLOPT_TIMEOUT, 10);
