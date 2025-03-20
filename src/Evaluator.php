@@ -41,9 +41,8 @@ class Evaluator
             case 'assignment':
             case 'variable':
                 $varName = $this->node['name'];
-                if ($this->isVariableArray($varName)) {
-                    return $this->isVariableArray($varName);
-                }
+                if($this->isVariableArray($varName)) return $this->isVariableArray($varName);
+                if($this->isVariableAssoArray($varName)) return $this->isVariableAssoArray($varName);
                 if(!empty($this->node['value'])) {
                     $varValue = (new Evaluator($this->node['value'], $this->env))->evaluate();
                     $this->env->defineVariable($varName, $varValue);
@@ -166,8 +165,6 @@ class Evaluator
 
             case 'filter':
                 return $this->evaluateFilter($this->node);
-
-
 
 
             default:
@@ -427,15 +424,70 @@ class Evaluator
                 $this->env->defineVariable($varName, $varValue);
             } else if (!isset($this->node['array']['type'])) {
                 foreach ($this->node['array'] as $value) {
-                    $varValue[] = (new Evaluator($value, $this->env))->evaluate();
+                    $varValue[] = $this->evaluateNestedValue($value);
                 }
                 $this->env->defineVariable($varName, $varValue);
             }
             return $varValue;
         }
-
-
         return null;
+    }
+
+    /**
+     * @throws Exception
+     */
+    private function isVariableAssoArray(string $varName): ?array
+    {
+        if(isset($this->node['assoArray'])){
+            $arrayKey = [];
+            $arrayValue = [];
+
+            foreach ($this->node['assoArray']['key'] as $value) {
+                $arrayKey[] = (new Evaluator($value, $this->env))->evaluate();
+            }
+
+            foreach ($this->node['assoArray']['value'] as $value) {
+                $arrayValue[] = $this->evaluateNestedValue($value);
+            }
+
+            if (count($arrayKey) !== count($arrayValue)) {
+                return null;
+            }
+
+            $assoArray = array_combine($arrayKey, $arrayValue);
+            $this->env->defineVariable($varName, $assoArray);
+
+            return $assoArray;
+        }
+        return null;
+    }
+
+    /**
+     * @throws Exception
+     */
+    private function evaluateNestedValue($value)
+    {
+
+        if (is_array($value) && isset($value['type']) && $value['type'] === 'literal' && isset($value['value'])) {
+            return $value['value'];
+        }
+        if(isset($value["type"]) && $value["type"] == "assoArray" && is_array($value["value"]))
+        {
+            $evaluatedArray = [];
+            foreach ($value["value"] as $subValue) {
+                $evaluatedArray[] = $this->evaluateNestedValue($subValue);
+            }
+            return $evaluatedArray;
+        }
+
+        if (is_array($value) ) {
+            $evaluatedArray = [];
+            foreach ($value as $subValue) {
+                $evaluatedArray[] = $this->evaluateNestedValue($subValue);
+            }
+            return $evaluatedArray;
+        }
+        return (new Evaluator($value, $this->env))->evaluate();
     }
 
     /**
