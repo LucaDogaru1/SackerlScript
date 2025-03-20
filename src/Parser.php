@@ -67,6 +67,9 @@ class Parser
         $array = $this->parseArray($tokenIndex);
         if ($array) return $array;
 
+        $assoArray = $this->parseAssoArray($tokenIndex);
+        if($assoArray) return $assoArray;
+
         $arrayAccess = $this->parseArrayAccess($tokenIndex);
         if ($arrayAccess) return $arrayAccess;
 
@@ -274,11 +277,15 @@ class Parser
                 if ($equalToken && $equalToken[0] == 'T_ASSIGN') {
                     $tokenIndex++;
                     $arrayResult = $this->parseArray($tokenIndex);
-
                     if ($arrayResult) {
                         [$valueNode, $tokenIndex] = $arrayResult;
-
                         return [['type' => 'variable', 'name' => $variableName, 'array' => $valueNode], $tokenIndex];
+                    }
+
+                    $assoArray = $this->parseAssoArray($tokenIndex);
+                    if($assoArray) {
+                        [$valueNode, $tokenIndex] = $assoArray;
+                        return [['type' => 'variable', 'name' => $variableName, 'assoArray' => $valueNode], $tokenIndex];
                     }
 
                     $expressionResult = $this->parseExpression($tokenIndex);
@@ -713,7 +720,7 @@ class Parser
         $values = [];
 
         $fetch = $this->parseFetchGetMethod($tokenIndex);
-        if($fetch) {
+        if ($fetch) {
             [$value, $tokenIndex] = $fetch;
             return [$value, $tokenIndex];
         }
@@ -721,10 +728,10 @@ class Parser
         if ($token && $token[0] == 'T_OPENING_BRACKET') {
             $tokenIndex++;
             while (true) {
-                $literal = $this->parseLiteralValue($tokenIndex);
+                $expression = $this->parseExpression($tokenIndex);
 
-                if (!$literal) break;
-                [$value, $tokenIndex] = $literal;
+                if (!$expression) break;
+                [$value, $tokenIndex] = $expression;
                 $values[] = $value;
                 $nextToken = $this->currentToken($tokenIndex);
 
@@ -734,13 +741,11 @@ class Parser
                 }
                 break;
             }
-
             $closingBracket = $this->currentToken($tokenIndex);
             if ($closingBracket && $closingBracket[0] === 'T_CLOSING_BRACKET') {
-                if(!$values) {
+                if (!$values) {
                     return [[], $tokenIndex + 1];
                 }
-
                 return [$values, $tokenIndex + 1];
             }
         }
@@ -994,22 +999,68 @@ class Parser
     /**
      * @throws Exception
      */
-    private function parseFetchGetMethod(int $tokenIndex) :?array
+    private function parseFetchGetMethod(int $tokenIndex): ?array
     {
         $token = $this->currentToken($tokenIndex);
-        if($token && $token[0] == 'T_FETCH') {
+        if ($token && $token[0] == 'T_FETCH') {
             $tokenIndex++;
             $openParenthesis = $this->currentToken($tokenIndex);
 
-            if($openParenthesis && $openParenthesis[0] == 'T_OPENING_PARENTHESIS') {
+            if ($openParenthesis && $openParenthesis[0] == 'T_OPENING_PARENTHESIS') {
                 $tokenIndex++;
                 [$url, $tokenIndex] = $this->parseString($tokenIndex);
-                if(!$url) return throw new Exception("Invalid url");
+                if (!$url) return throw new Exception("Invalid url");
                 $closingParenthesis = $this->currentToken($tokenIndex);
 
-                if($closingParenthesis && $closingParenthesis[0] == 'T_CLOSING_PARENTHESIS') {
+                if ($closingParenthesis && $closingParenthesis[0] == 'T_CLOSING_PARENTHESIS') {
                     return [['type' => 'fetch', 'url' => $url], $tokenIndex + 1];
                 }
+            }
+        }
+        return null;
+    }
+
+    private function parseAssoArray(int $tokenIndex): ?array
+    {
+        $openingBracket = $this->currentToken($tokenIndex);
+        if ($openingBracket && $openingBracket[0] == 'T_OPENING_BRACKET') {
+            $tokenIndex++;
+            $keys = [];
+            $values = [];
+
+            while (true) {
+                $expressionKey = $this->parseExpression($tokenIndex);
+                if (!$expressionKey) break;
+                [$key, $tokenIndex] = $expressionKey;
+                $keys[] = $key;
+
+                $colon = $this->currentToken($tokenIndex);
+                if(!$colon || $colon[0] !== 'T_COLON') return null;
+                $tokenIndex++;
+
+                $expressionValue = $this->parseExpression($tokenIndex);
+                if (!$expressionValue) break;
+                [$value, $tokenIndex] = $expressionValue;
+                $values[] = $value;
+
+                $separator = $this->currentToken($tokenIndex);
+                if ($separator && $separator[0] == 'T_SEPARATOR') {
+                    $tokenIndex++;
+                    continue;
+                }
+                break;
+            }
+            $closingBracket = $this->currentToken($tokenIndex);
+
+            if ($closingBracket && $closingBracket[0] == 'T_CLOSING_BRACKET') {
+                return [
+                    [
+                        'type' => 'assoArray',
+                        'key' => $keys,
+                        'value' => $values,
+                    ],
+                    $tokenIndex + 1
+                ];
             }
         }
         return null;
