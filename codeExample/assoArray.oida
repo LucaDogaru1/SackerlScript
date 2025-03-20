@@ -1,0 +1,9 @@
+heast test = ["key1" : [2 : "adas", 3 : "inArray", 4 : [3,4,6]]]
+
+heast new = test["key1"]
+
+fiaOis(new als item) {
+wenn(item.isArray) {fiaOis(item als i) {oida.sag(i)}}
+wenn(item.keinArray){oida.sag(item)}
+}
+
