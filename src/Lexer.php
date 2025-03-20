@@ -18,6 +18,7 @@ class Lexer
             'T_IF'=> '/\bwenn\b/',
             'T_ELSE' => '/\bsonst\b/',
             'T_FALSE' => '/\bsichaned\b/',
+            'T_COLON' => '/\:/',
             'T_TRUE' => '/\bbasst\b/',
             'T_FUNCTION' => '/\bhawara\b/',
             'T_LOGICAL_AND' => '/\bund\b/',
